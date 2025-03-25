@@ -1,6 +1,8 @@
 package vacantes.modelo.entities;
 
 import java.sql.Date;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -25,7 +27,9 @@ public class Usuario {
 	private String nombre;
 	private String apellidos;
 	private String password;
-	private int enable;
+	private int enabled;
+	
+	@Column(name="fecha_Registro")
 	private Date fechaRegistro;
 	
 	@Enumerated(EnumType.STRING)
