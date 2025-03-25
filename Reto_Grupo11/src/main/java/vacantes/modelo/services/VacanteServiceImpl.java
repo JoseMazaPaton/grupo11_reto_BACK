@@ -1,40 +1,76 @@
 package vacantes.modelo.services;
 
 import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import vacantes.modelo.entities.Vacante;
+import vacantes.repository.VacanteRepository;
 
 @Service
 public class VacanteServiceImpl implements VacanteService {
-
+	
+	@Autowired
+	private VacanteRepository vRepo;
+	
 	@Override
 	public Vacante buscarUno(Integer clavePk) {
-		// TODO Auto-generated method stub
-		return null;
+		return vRepo.findById(clavePk).orElse(null);
 	}
 
 	@Override
 	public List<Vacante> buscarTodos() {
 		// TODO Auto-generated method stub
-		return null;
+		return vRepo.findAll();
 	}
 
 	@Override
 	public Vacante insertUno(Vacante entidad) {
-		// TODO Auto-generated method stub
-		return null;
+		
+		try {
+			if (vRepo.existsById(entidad.getIdVacante()))
+				return null;
+			else
+				return vRepo.save(entidad);
+		} catch (Exception e) {
+			e.printStackTrace();
+			
+			return null;
+		}
 	}
 
 	@Override
 	public int updateUno(Vacante entidad) {
-		// TODO Auto-generated method stub
-		return 0;
+		
+		try {
+			if (vRepo.existsById(entidad.getIdVacante())) {
+				vRepo.save(entidad);
+				return 1;
+			}
+				
+			else
+				return 0;
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			return -1;
+		}
 	}
 
 	@Override
 	public int deleteUno(Integer clavePk) {
-		// TODO Auto-generated method stub
-		return 0;
+		
+		try {
+			if (vRepo.existsById(clavePk)) {
+				vRepo.deleteById(clavePk);
+				return 1;
+			}
+			else 
+				return 0;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return -1;
+		}
 	}
 
 }
