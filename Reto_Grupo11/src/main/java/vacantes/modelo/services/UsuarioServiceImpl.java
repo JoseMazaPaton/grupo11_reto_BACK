@@ -36,7 +36,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 				return uRepo.save(usuario);
 			
 		} catch (Exception e) {
-			e.printStackTrace(); // para las pruebas hago un syso de todo lo ocurrido.
+			e.printStackTrace(); 
 			return null;
 		}
 	}
@@ -45,15 +45,15 @@ public class UsuarioServiceImpl implements UsuarioService {
 	public int updateUno(Usuario usuario) {
 	    try {
 	        if (uRepo.existsById(usuario.getEmail())) {
-	            System.out.println("Actualizando usuario con Nombre: " + usuario.getNombre());
+	            
 	            uRepo.save(usuario);
-	            return 1; // Éxito
+	            return 1;
 	        } else {
-	            return 0; // Usuario no encontrado
+	            return 0; 
 	        }
 	    } catch (Exception e) {
 	        e.printStackTrace();
-	        return -1; // Error en la base de datos
+	        return -1; 
 	    }	
 	}
 
@@ -61,7 +61,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 	public int deleteUno(String email) {
 	    try {
 			if (uRepo.existsById(email)) {
-				uRepo.deleteById(email); // no devuele nada
+				uRepo.deleteById(email); 
 				return 1; // Si lo encuenta, y lo borra, devuelvo 1.
 			}
 			else 
@@ -71,6 +71,12 @@ public class UsuarioServiceImpl implements UsuarioService {
 			e.printStackTrace(); // para las pruebas hago un syso de todo lo ocurrido.
 			return -1; // Si se casca, devuelvo -1
 		}
+	}
+
+	@Override
+	public Usuario buscarPorEmail(String email) {
+		
+		return uRepo.findByEmail(email); 
 	}
 
 

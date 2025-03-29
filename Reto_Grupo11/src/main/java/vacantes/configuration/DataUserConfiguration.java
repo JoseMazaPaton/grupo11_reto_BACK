@@ -74,6 +74,6 @@ public class DataUserConfiguration {
 
 	        return http.build();
 	    }
-
+	 	
 
 }

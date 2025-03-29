@@ -40,4 +40,6 @@ public class Empresa {
 	@JoinColumn(name="email")
 	private Usuario usuario;
 
+	
+
 }
