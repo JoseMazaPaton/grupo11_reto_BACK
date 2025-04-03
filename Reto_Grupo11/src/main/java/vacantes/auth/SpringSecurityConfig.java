@@ -87,7 +87,9 @@ public class SpringSecurityConfig {
   
 
                 .requestMatchers(HttpMethod.GET, "/categoria/**").hasAnyRole("CLIENTE", "ADMON", "EMPRESA")
-            
+                 
+                
+                // AQUI GESTIONAR CUALES ROLES PUEDEN HACER QUE COSAS
 
                 .requestMatchers(HttpMethod.GET, "/comidas/**").hasAnyRole("CLIENTE", "ADMON")
                 .requestMatchers(HttpMethod.POST, "/comidas/**").hasAnyRole("CLIENTE", "ADMON")

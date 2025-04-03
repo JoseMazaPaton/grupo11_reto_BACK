@@ -161,7 +161,7 @@ public class AuthServiceImpl implements AuthService{
 		        usuario.setPassword(passwordEncoder.encode(contraseña));
 		        usuario.setFechaRegistro(LocalDate.now());
 		        //descomentar para crear usuario con rol admon
-		        //usuario.setRol(usuario.getRol().ADMON);
+		        // usuario.setRol(usuario.getRol().ADMON);
 
 		        // Guardamos los datos del usuario (se guarda también objetivo por cascada)
 		        uRepo.save(usuario);
