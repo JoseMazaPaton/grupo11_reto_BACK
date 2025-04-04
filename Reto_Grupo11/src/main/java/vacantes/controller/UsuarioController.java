@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import vacantes.modelo.entities.Rol;
+import vacantes.modelo.entities.Solicitud;
 import vacantes.modelo.entities.Usuario;
 import vacantes.modelo.services.UsuarioService;
 
@@ -27,6 +28,24 @@ public class UsuarioController {
 	
 	@Autowired
 	UsuarioService usuarioService;
+	
+    @PostMapping("/solicitud/vacante")
+    public ResponseEntity<?> postularVacante(@RequestBody Solicitud solicitud) {
+    	Integer respuesta = usuarioService.enviarSolicitud(solicitud);
+    	
+		switch(respuesta) {
+			case 1:  return new ResponseEntity<>("Solicitud enviada correctamente", HttpStatus.OK);
+			case 0:  return new ResponseEntity<>("Error: Usuario o vacante no encontrados.", HttpStatus.NOT_FOUND);
+			case 2: return new ResponseEntity<>("Error: Ya has postulado a esta vacante.", HttpStatus.BAD_REQUEST);
+			case -1: return new ResponseEntity<>("Esto es un problema de la base de datos, llame a servicio Tecnico", HttpStatus.BAD_REQUEST);
+			default:  return new ResponseEntity<>("Error desconocido", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+
+		
+		// POSTMAN: localhost:8445/usuario/solicitud/vacante
+
+    }
+	
 	
 	/***** CRUD *****/
 	@GetMapping("/all")

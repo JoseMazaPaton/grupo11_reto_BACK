@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import vacantes.modelo.entities.Solicitud;
+import vacantes.modelo.entities.Usuario;
+import vacantes.modelo.entities.Vacante;
 import vacantes.repository.SolicitudRepository;
 
 @Service
@@ -69,6 +71,16 @@ public class SolicitudServiceImpl implements SolicitudService {
 			e.printStackTrace();
 			return -1;
 		}
+	}
+
+	@Override
+	public Solicitud buscarPorVacanteAndUsuario(Vacante vacante, Usuario usuario) {
+	    try {
+	        return sRepo.findByVacanteAndUsuario(vacante, usuario);
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return null;
+	    }
 	}
 
 }

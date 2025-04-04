@@ -1,11 +1,17 @@
 package vacantes.modelo.services;
 
+import java.sql.Date;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import vacantes.modelo.entities.Solicitud;
 import vacantes.modelo.entities.Usuario;
+import vacantes.modelo.entities.Vacante;
+import vacantes.repository.SolicitudRepository;
 import vacantes.repository.UsuarioRepository;
+import vacantes.repository.VacanteRepository;
 
 @Service
 public class UsuarioServiceImpl implements UsuarioService {
@@ -13,6 +19,10 @@ public class UsuarioServiceImpl implements UsuarioService {
 	@Autowired
 	private UsuarioRepository uRepo;
 	
+	@Autowired
+	private SolicitudRepository sRepo;
+	@Autowired
+	private VacanteRepository vRepo;
 
 	/**** CRUD ****/
 	@Override
@@ -77,6 +87,36 @@ public class UsuarioServiceImpl implements UsuarioService {
 	public Usuario buscarPorEmail(String email) {
 		
 		return uRepo.findByEmail(email); 
+	}
+
+	@Override
+	public int enviarSolicitud(Solicitud solicitud) {
+		try {
+			Usuario usuario = uRepo.findById(solicitud.getUsuario().getEmail()).orElse(null);
+			Vacante vacante = vRepo.findById(solicitud.getVacante().getIdVacante()).orElse(null);
+	
+	        if (usuario == null || vacante == null) {
+	            return 0; // Si no existen, devuelvo 0
+	        }
+	        
+	        if (sRepo.findByVacanteAndUsuario(vacante, usuario) != null) { // Comprobamos si ya existe solicitud de ese usuario a esa vacante
+	            return 2; // Si ya existe devuelvo 2
+	        }
+	        
+	        // Completamos la solicitud
+	        solicitud.setFecha(new Date(System.currentTimeMillis()));
+	        solicitud.setEstado(false);
+	        solicitud.setUsuario(usuario);
+	        solicitud.setVacante(vacante);
+	        
+	        sRepo.save(solicitud);
+	        
+	        return 1; // Si envia solicitud correctamente.
+	        
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return -1;
+	    }
 	}
 
 
