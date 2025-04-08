@@ -79,6 +79,7 @@ public class SpringSecurityConfig {
             	
                 // AUTH =================================================================================
                 .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/registro").permitAll()
+                .requestMatchers(HttpMethod.GET, "swagger-ui/**").permitAll()
                 
                 // PÚBLICO =================================================================================
                 .requestMatchers(HttpMethod.GET, "/alimentos", "/alimentos/**", "/categorias/todas").permitAll()
@@ -91,11 +92,7 @@ public class SpringSecurityConfig {
                 
                 // AQUI GESTIONAR CUALES ROLES PUEDEN HACER QUE COSAS
 
-                .requestMatchers(HttpMethod.GET, "/comidas/**").hasAnyRole("CLIENTE", "ADMON")
-                .requestMatchers(HttpMethod.POST, "/comidas/**").hasAnyRole("CLIENTE", "ADMON")
-                .requestMatchers(HttpMethod.PUT, "/comidas/**").hasAnyRole("CLIENTE", "ADMON")
-                .requestMatchers(HttpMethod.DELETE, "/comidas/**").hasAnyRole("CLIENTE", "ADMON")
-
+               
                 .requestMatchers(HttpMethod.GET, "/alimentos/mis").hasAnyRole("CLIENTE", "ADMON")
                 .requestMatchers(HttpMethod.POST, "/alimentos").hasAnyRole("CLIENTE", "ADMON")
                 .requestMatchers(HttpMethod.PUT, "/alimentos/**").hasAnyRole("CLIENTE", "ADMON")
