@@ -10,7 +10,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import vacantes.dto.AltaEmpresaRequestDto;
 import vacantes.dto.AltaEmpresaResponseDto;
 import vacantes.modelo.entities.Empresa;
+import vacantes.modelo.entities.Rol;
 import vacantes.modelo.entities.Usuario;
 import vacantes.modelo.services.EmpresaServiceImpl;
 import vacantes.modelo.services.UsuarioServiceImpl;
@@ -87,6 +90,24 @@ public class AdminController {
 		
 	}
 	
+	@PutMapping("/deshabilitar/{email}")
+	public ResponseEntity<?> baja(@PathVariable String email) {
+		Usuario usuario = uService.buscarUno(email);
+		
+		if (usuario != null) {
+			usuario.setEnabled(0);
+			switch(uService.updateUno(usuario)) {
+				case 1:  return new ResponseEntity<>("Este usuario ha sido deshabilitado", HttpStatus.OK);
+				case 0:  return new ResponseEntity<>("Usuario no existe", HttpStatus.NOT_FOUND);
+				case -1: return new ResponseEntity<>("Esto es un problema de la base de datos, llame a servicio Tecnico", HttpStatus.BAD_REQUEST);
+				default:  return new ResponseEntity<>("Error desconocido", HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		}	else {
+			return new ResponseEntity<String>("Este usuario no existe", HttpStatus.NOT_FOUND);
+		}
 	
-
+		// POSTMAN: localhost:8445/admin/deshabilitar/nuevo@correo.com
+				
+	}
+	
 }

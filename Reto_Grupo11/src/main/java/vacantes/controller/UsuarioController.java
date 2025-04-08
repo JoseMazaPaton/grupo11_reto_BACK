@@ -1,6 +1,7 @@
 package vacantes.controller;
 
 
+import java.time.LocalDate;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -90,7 +91,14 @@ public class UsuarioController {
 	@PostMapping("/add")
 	public ResponseEntity<?> alta(@RequestBody Usuario usuario) {
 
-		usuario.setRol(Rol.ADMON);
+		if (usuarioService.buscarPorEmail(usuario.getEmail()) != null) {
+			return ResponseEntity.status(HttpStatus.CONFLICT)
+					.body("Ese email ya esta en uso, usa otro");
+		}
+		
+		usuario.setRol(Rol.CLIENTE);
+		usuario.setFechaRegistro(LocalDate.now());
+		usuario.setEnabled(1);
 		
 	    Usuario nuevoUsuario = usuarioService.insertUno(usuario);
 
