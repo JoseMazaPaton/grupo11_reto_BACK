@@ -77,9 +77,15 @@ public class SpringSecurityConfig {
             	
             	authorize
             	
-                // AUTH =================================================================================
+            	// SWAGGER =================================================================================
+                .requestMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll()   // Permitir acceso a Swagger UI
+                .requestMatchers(HttpMethod.GET, "/v3/api-docs/**").permitAll()  // Permitir acceso a los documentos de Swagger
+                .requestMatchers(HttpMethod.GET, "/swagger-resources/**").permitAll()  // Permitir acceso a swagger-resources
+                .requestMatchers(HttpMethod.GET, "/webjars/**").permitAll()  // Permitir acceso a los webjars de Swagger
+                .requestMatchers(HttpMethod.GET, "/favicon.ico").permitAll()  // Permitir acceso al favicon
+                 
+            	// AUTH =================================================================================
                 .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/registro").permitAll()
-                .requestMatchers(HttpMethod.GET, "swagger-ui/**").permitAll()
                 
                 // PÚBLICO =================================================================================
                 .requestMatchers(HttpMethod.GET, "/alimentos", "/alimentos/**", "/categorias/todas").permitAll()
