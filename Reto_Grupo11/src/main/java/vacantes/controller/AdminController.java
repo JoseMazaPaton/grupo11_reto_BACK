@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.util.Base64;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import vacantes.dto.AltaEmpresaRequestDto;
 import vacantes.dto.AltaEmpresaResponseDto;
+import vacantes.dto.UsuarioRequestDto;
 import vacantes.modelo.entities.Empresa;
 import vacantes.modelo.entities.Rol;
 import vacantes.modelo.entities.Usuario;
@@ -40,7 +42,9 @@ public class AdminController {
 	
 	@Autowired
 	private PasswordEncoder passwordEncoder;
-	
+
+	@Autowired
+	private ModelMapper mapper;
 	
 	@Transactional  // Si falla empresa, se revierte el usuario
 	@PostMapping("/alta/empresa")
@@ -108,6 +112,30 @@ public class AdminController {
 	
 		// POSTMAN: localhost:8445/admin/deshabilitar/nuevo@correo.com
 				
+	}
+	
+	@Transactional  // Si falla, se revierte el usuario
+	@PostMapping("/add")
+	public ResponseEntity<?> altaAdmon(@RequestBody UsuarioRequestDto nuevoAdmin) {
+		
+		if (uService.buscarPorEmail(nuevoAdmin.getEmail()) != null) {
+			return ResponseEntity.status(HttpStatus.CONFLICT)
+					.body("Ese email ya esta en uso, usa otro");
+		}
+				
+        // Mapeamos usuario y objetivo a sus entidades
+        Usuario nuevoUsuario = mapper.map(nuevoAdmin, Usuario.class);
+		nuevoUsuario.setRol(Rol.ADMON);
+		nuevoUsuario.setFechaRegistro(LocalDate.now());
+        
+	    if (uService.insertUno(nuevoUsuario) != null) {	
+	        return new ResponseEntity<>("Usuario añadido correctamente", HttpStatus.CREATED);
+	    } else {
+	        return new ResponseEntity<>("El usuario ya existe o hubo un error", HttpStatus.BAD_REQUEST);
+	    }
+		
+		// POSTMAN: localhost:8445/admin/add
+			
 	}
 	
 }
