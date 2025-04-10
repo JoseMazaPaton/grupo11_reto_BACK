@@ -6,4 +6,5 @@ import vacantes.modelo.entities.Categoria;
 
 public interface CategoriaRepository extends JpaRepository<Categoria, Integer> {
 
+	public Categoria findByNombre(String nombre);
 }

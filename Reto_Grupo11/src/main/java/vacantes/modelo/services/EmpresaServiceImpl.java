@@ -77,4 +77,10 @@ public class EmpresaServiceImpl implements EmpresaService {
 		return 0;
 	}
 
+	@Override
+	public Empresa buscarPorNombre(String nombre) {
+		// TODO Auto-generated method stub
+		return empresaRepository.findByNombreEmpresa(nombre);
+	}
+
 }

@@ -39,18 +39,18 @@ public class AuthController {
 
 	    
 
-	    //METODO CON RUTA PARA CERRAR SESIÓN
-	    @PostMapping("/logout")
-	    public ResponseEntity<Map<String, Object>> logout() {
+	    //METODO CON RUTA PARA CERRAR SESIÓN - - - - - NO SE USARA
+	    // @PostMapping("/logout")
+	    // public ResponseEntity<Map<String, Object>> logout() {
 	    	
-	        // Limpiamos el contexto de seguridad (borra el usuario autenticado actual)
-	        SecurityContextHolder.clearContext();
-
-	        // Devolvemos un mensaje de exito
-	        return ResponseEntity.ok(
-	            Map.of("mensaje", "Sesión cerrada correctamente")
-	        );
-	    }
+	    //      // Limpiamos el contexto de seguridad (borra el usuario autenticado actual)
+	    //      SecurityContextHolder.clearContext();
+	    //
+	    //      Devolvemos un mensaje de exito
+	    //      return ResponseEntity.ok(
+	    //         Map.of("mensaje", "Sesión cerrada correctamente")
+	    //     );
+	    //  }
 	    
 	    
 	    //METODO CON RUTA PARA REGISTRAR UN USUARIO

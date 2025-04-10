@@ -46,4 +46,10 @@ public class CategoriaServiceImpl implements CategoriaService {
         }
         return 0; // No se encontró la categoría
     }
+
+	@Override
+	public Categoria buscarPorNombre(String nombre) {
+		// TODO Auto-generated method stub
+		return categoriaRepository.findByNombre(nombre);
+	}
 }

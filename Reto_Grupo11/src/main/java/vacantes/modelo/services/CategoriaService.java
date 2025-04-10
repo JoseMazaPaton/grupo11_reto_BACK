@@ -6,5 +6,7 @@ import java.util.Optional;
 import vacantes.modelo.entities.Categoria;
 
 public interface CategoriaService extends CrudGenerico<Categoria, Integer>{
+	
+	Categoria buscarPorNombre(String nombre);
 	 	
 }

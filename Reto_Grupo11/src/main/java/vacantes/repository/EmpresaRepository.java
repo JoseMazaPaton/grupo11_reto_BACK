@@ -6,5 +6,6 @@ import vacantes.modelo.entities.Empresa;
 
 public interface EmpresaRepository extends JpaRepository<Empresa, Integer> {
 	
-
+	public Empresa findByNombreEmpresa (String nombre);
+	
 }
