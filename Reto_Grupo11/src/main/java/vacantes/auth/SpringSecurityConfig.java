@@ -87,23 +87,31 @@ public class SpringSecurityConfig {
             	// AUTH =================================================================================
                 .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/registro").permitAll()
                 
-                // PÚBLICO =================================================================================
-                .requestMatchers(HttpMethod.GET, "/alimentos", "/alimentos/**", "/categorias/todas").permitAll()
-
                 // USUARIO AUTENTICADO =================================================================================
   
-
                 .requestMatchers(HttpMethod.GET, "/categoria/**").hasAnyRole("CLIENTE", "ADMON", "EMPRESA")
-                 
+                // VACANTES
+                .requestMatchers(HttpMethod.GET, "/vacante/todas").hasAnyRole("CLIENTE", "EMPRESA")
+                .requestMatchers(HttpMethod.GET, "/vacante/detalle/**").hasAnyRole("EMPRESA")
+                .requestMatchers(HttpMethod.POST, "/vacante/add").hasAnyRole("EMPRESA")
+                .requestMatchers(HttpMethod.PUT, "/vacante/modificar/**").hasAnyRole("EMPRESA")
+                .requestMatchers(HttpMethod.DELETE, "/vacante/eliminar/**").hasAnyRole("EMPRESA")
+                .requestMatchers(HttpMethod.PUT, "/vacante/asignar/**").hasAnyRole("EMPRESA")
                 
-                // AQUI GESTIONAR CUALES ROLES PUEDEN HACER QUE COSAS
-
-               
-                .requestMatchers(HttpMethod.GET, "/alimentos/mis").hasAnyRole("CLIENTE", "ADMON")
-                .requestMatchers(HttpMethod.POST, "/alimentos").hasAnyRole("CLIENTE", "ADMON")
-                .requestMatchers(HttpMethod.PUT, "/alimentos/**").hasAnyRole("CLIENTE", "ADMON")
-                .requestMatchers(HttpMethod.DELETE, "/alimentos/**").hasAnyRole("CLIENTE", "ADMON")
-
+                // SOLICITUD
+                
+                .requestMatchers(HttpMethod.POST, "/solicitud/**").hasAnyRole("CLIENTE")
+                .requestMatchers(HttpMethod.GET, "/solicitud/**").hasAnyRole("CLIENTE", "EMPRESA")
+                .requestMatchers(HttpMethod.DELETE, "/solicitud/**").hasAnyRole("CLIENTE", "EMPRESA")
+                .requestMatchers(HttpMethod.PUT, "/solicitud/**").hasAnyRole("CLIENTE", "EMPRESA")
+                
+                // USUARIO
+                
+                .requestMatchers(HttpMethod.GET, "/usuario/**").hasAnyRole("ADMON")
+                .requestMatchers(HttpMethod.PUT, "/usuario/edit/**").hasAnyRole("ADMON")
+                .requestMatchers(HttpMethod.DELETE, "/usuario/**").hasAnyRole("ADMON")
+                
+                
                 // SOLO ADMIN ==========================================================================================
                 .requestMatchers(HttpMethod.GET, "/admin/**").hasRole("ADMON")
                 .requestMatchers(HttpMethod.POST, "/admin/**").hasRole("ADMON")

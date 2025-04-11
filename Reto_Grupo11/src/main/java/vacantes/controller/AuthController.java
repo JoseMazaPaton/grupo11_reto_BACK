@@ -11,6 +11,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import vacantes.dto.LoginRequestDto;
 import vacantes.dto.LoginResponseDto;
@@ -21,6 +28,7 @@ import vacantes.modelo.services.AuthService;
 @RestController
 @RequestMapping("/auth")
 @CrossOrigin(origins = "*")
+@Tag(name = "Authentication", description = "Gestiones relacionadas con la autenticacion, tales como logearte y registrarte")
 public class AuthController {
 
 	 @Autowired
@@ -28,6 +36,25 @@ public class AuthController {
 
 
 	  //METODO CON RUTA PARA INICIAR SESION
+		 @Operation(
+			        summary = "Iniciar sesión",
+			        description = "Autentica a un usuario mediante su email y contraseña. Devuelve un token JWT si es válido."
+			    )
+			    @ApiResponses(value = {
+			        @ApiResponse(
+			            responseCode = "200",
+			            description = "Login correcto",
+			            content = @Content(
+			                mediaType = "application/json",
+			                schema = @Schema(implementation = LoginResponseDto.class),
+			                examples = @ExampleObject(
+			                    name = "Respuesta ejemplo",
+			                    value = "{ \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6...\", \"rol\": \"USUARIO\" }"
+			                )
+			            )
+			        ),
+			        @ApiResponse(responseCode = "500", description = "Error inesperado en el login")
+			    })
 	    @PostMapping("/login")
 	    public ResponseEntity<LoginResponseDto> login(@RequestBody @Valid LoginRequestDto loginDto) {
 	    	
@@ -54,6 +81,42 @@ public class AuthController {
 	    
 	    
 	    //METODO CON RUTA PARA REGISTRAR UN USUARIO
+		 @Operation(
+			        summary = "Registrar usuario",
+			        description = "Registra un nuevo usuario en el sistema con sus datos personales y credenciales."
+			    )
+			    @ApiResponses(value = {
+			        @ApiResponse(
+			            responseCode = "200",
+			            description = "Registro correcto",
+			            content = @Content(
+			                mediaType = "application/json",
+			                schema = @Schema(implementation = RegistroResponseDto.class),
+			                examples = @ExampleObject(
+			                    name = "Respuesta exitosa",
+			                    value = "{\n" +
+			                            "  \"usuario\": {\n" +
+			                            "    \"email\": \"usuario@correo.com\",\n" +
+			                            "    \"nombre\": \"Juan\",\n" +
+			                            "    \"apellidos\": \"Pérez\",\n" +
+			                            "    \"fechaRegistro\": \"2025-04-10T12:00:00\"\n" +
+			                            "  },\n" +
+			                            "  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjM0NTY3ODkwIiwiaWF0IjoxNjE3NjY5MzI2LCJleHBpcmVkVG9rZW4iOiJldG9rZW4= \"\n" +
+			                            "}"
+			                )
+			            )
+			        ),
+			        @ApiResponse(
+			            responseCode = "409",
+			            description = "Error de validación o email duplicado",
+			            content = @Content(
+			                mediaType = "application/json",
+			                schema = @Schema(type = "object", example = "{\n" +
+			                            "  \"mensaje\": \"El email proporcionado ya está registrado\"\n" +
+			                            "}")
+			            )
+			        )
+			    })
 	    @PostMapping("/registro")
 	    public ResponseEntity<RegistroResponseDto> registroUsuario(@RequestBody @Valid RegistroRequestDto registroDto) {
 	    	

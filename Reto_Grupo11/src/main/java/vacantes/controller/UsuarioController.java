@@ -193,7 +193,9 @@ public class UsuarioController {
 				
 	}
 
-
+	// NO HACE FALTA YA TENEMOS EL REGISTRO PARA ESTO. TENER EN CUENTA
+	
+	
 	@PostMapping("/add")
 	@Operation(
 		    summary = "Registrar un nuevo usuario",

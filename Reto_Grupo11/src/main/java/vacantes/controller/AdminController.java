@@ -28,9 +28,18 @@ import vacantes.modelo.services.EmpresaServiceImpl;
 import vacantes.modelo.services.UsuarioServiceImpl;
 import vacantes.utils.PasswordGenerator;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+
 @RestController
 @RequestMapping("/admin")
 @CrossOrigin(origins = "*")
+@Tag(name = "Administrador", description = "Gestiones relacionadas con el rol de Administrador (ADMON)")
 public class AdminController {
 	
 	
@@ -46,6 +55,53 @@ public class AdminController {
 	@Autowired
 	private ModelMapper mapper;
 	
+	
+	
+	@Operation(
+		    summary = "Dar de alta una empresa con su usuario",
+		    description = "Crea una nueva empresa junto a su usuario con rol EMPRESA.",
+		    requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+		        description = "Datos para registrar una nueva empresa",
+		        content = @Content(
+		            schema = @Schema(implementation = AltaEmpresaRequestDto.class),
+		            examples = {
+		                @ExampleObject(
+		                    name = "Ejemplo alta empresa",
+		                    value = """
+		                    {
+		                        "email": "empresa@correo.com",
+		                        "nombreUsuario": "Carlos",
+		                        "apellidoUsuario": "García",
+		                        "nombreEmpresa": "Tech SL",
+		                        "cif": "B12345678",
+		                        "direccionFiscal": "Calle Mayor 1",
+		                        "pais": "España"
+		                    }
+		                    """
+		                )
+		            }
+		        )
+		    ),
+		    responses = {
+		        @ApiResponse(
+		            responseCode = "201",
+		            description = "Empresa creada correctamente",
+		            content = @Content(
+		                schema = @Schema(implementation = AltaEmpresaResponseDto.class),
+		                examples = @ExampleObject(
+		                    name = "Respuesta OK",
+		                    value = """
+		                    {
+		                        "email": "empresa@correo.com",
+		                        "password": "XyZ123@!",
+		                        "rol": "EMPRESA"
+		                    }
+		                    """
+		                )
+		            )
+		        )
+		    }
+		)
 	@Transactional  // Si falla empresa, se revierte el usuario
 	@PostMapping("/alta/empresa")
 	public ResponseEntity<?> altaEmpresa(@RequestBody AltaEmpresaRequestDto altaEmpresaDto) {
@@ -94,6 +150,25 @@ public class AdminController {
 		
 	}
 	
+	
+	@Operation(
+		    summary = "Deshabilitar usuario por email",
+		    description = "Desactiva un usuario existente poniéndolo como deshabilitado (enabled = 0).",
+		    parameters = {
+		        @Parameter(
+		            name = "email",
+		            description = "Email del usuario a deshabilitar",
+		            required = true,
+		            example = "usuario@ejemplo.com"
+		        )
+		    },
+		    responses = {
+		        @ApiResponse(responseCode = "200", description = "Usuario deshabilitado correctamente"),
+		        @ApiResponse(responseCode = "404", description = "Usuario no encontrado"),
+		        @ApiResponse(responseCode = "400", description = "Problema con la base de datos"),
+		        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+		    }
+		)
 	@PutMapping("/deshabilitar/{email}")
 	public ResponseEntity<?> baja(@PathVariable String email) {
 		Usuario usuario = uService.buscarUno(email);
@@ -114,6 +189,33 @@ public class AdminController {
 				
 	}
 	
+	
+	@Operation(
+		    summary = "Dar de alta un administrador",
+		    description = "Crea un nuevo usuario con rol ADMINISTRADOR.",
+		    requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+		        description = "Datos del nuevo administrador",
+		        content = @Content(
+		            schema = @Schema(implementation = UsuarioRequestDto.class),
+		            examples = @ExampleObject(
+		                name = "Ejemplo alta admin",
+		                value = """
+		                {
+		                    "email": "admin@correo.com",
+		                    "nombre": "Laura",
+		                    "apellidos": "Pérez González",
+		                    "password": "Admin1234"
+		                }
+		                """
+		            )
+		        )
+		    ),
+		    responses = {
+		        @ApiResponse(responseCode = "201", description = "Administrador creado correctamente"),
+		        @ApiResponse(responseCode = "409", description = "Email ya está en uso"),
+		        @ApiResponse(responseCode = "400", description = "Error al crear el administrador")
+		    }
+		)
 	@Transactional  // Si falla, se revierte el usuario
 	@PostMapping("/add")
 	public ResponseEntity<?> altaAdmon(@RequestBody UsuarioRequestDto nuevoAdmin) {
