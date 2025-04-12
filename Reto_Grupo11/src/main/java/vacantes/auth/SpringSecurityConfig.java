@@ -83,6 +83,12 @@ public class SpringSecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/swagger-resources/**").permitAll()  // Permitir acceso a swagger-resources
                 .requestMatchers(HttpMethod.GET, "/webjars/**").permitAll()  // Permitir acceso a los webjars de Swagger
                 .requestMatchers(HttpMethod.GET, "/favicon.ico").permitAll()  // Permitir acceso al favicon
+                
+                .requestMatchers(HttpMethod.POST, "/swagger-ui/**").permitAll()   
+                .requestMatchers(HttpMethod.POST, "/v3/api-docs/**").permitAll()  
+                .requestMatchers(HttpMethod.POST, "/swagger-resources/**").permitAll()  
+                .requestMatchers(HttpMethod.POST, "/webjars/**").permitAll()  
+                .requestMatchers(HttpMethod.POST, "/favicon.ico").permitAll()
                  
             	// AUTH =================================================================================
                 .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/registro").permitAll()

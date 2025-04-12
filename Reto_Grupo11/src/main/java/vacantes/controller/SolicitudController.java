@@ -16,6 +16,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import vacantes.dto.SolicitudRequestDto;
 import vacantes.dto.SolicitudResponseDto;
 import vacantes.modelo.entities.Solicitud;
@@ -27,6 +37,7 @@ import vacantes.modelo.services.VacanteService;
 @RestController
 @CrossOrigin(origins = "*")
 @RequestMapping("/solicitud")
+@Tag(name = "Solicitud", description ="Operaciones sobre las solicitudes")
 public class SolicitudController {
 
 	@Autowired
@@ -37,6 +48,33 @@ public class SolicitudController {
 	
 	
 	//Buscar todas las solicitudes (GET)
+	@Operation(
+	        summary = "Obtener todas las solicitudes",
+	        description = "Devuelve una lista con todas las solicitudes, incluyendo datos de la vacante y empresa."
+	    )
+	    @ApiResponse(
+	        responseCode = "200",
+	        description = "Lista de solicitudes",
+	        content = @Content(
+	            mediaType = "application/json",
+	            examples = @ExampleObject(
+	                name = "Ejemplo de respuesta",
+	                value = """
+	                [
+	                  {
+	                    "fecha": "2025-04-12",
+	                    "archivos": "portafolio.pdf",
+	                    "estado": 0,
+	                    "curriculum": "cv_john_doe.pdf",
+	                    "nombreVacante": "Desarrollador Java",
+	                    "imagenVacante": "java.jpg",
+	                    "nombreEmpresa": "Tech Solutions"
+	                  }
+	                ]
+	                """
+	            )
+	        )
+	    )
 	@GetMapping("/all")
 	public ResponseEntity<List<SolicitudResponseDto>> todos() {
 	    List<Solicitud> solicitudes = solicitudService.buscarTodos();
@@ -57,8 +95,19 @@ public class SolicitudController {
 	}
 	
 	//Eliminar una solicitud (DELETE)
+	@Operation(
+	        summary = "Eliminar una solicitud",
+	        description = "Elimina una solicitud existente según su ID."
+	    )
+	    @ApiResponses(value = {
+	        @ApiResponse(responseCode = "200", description = "Solicitud eliminada correctamente"),
+	        @ApiResponse(responseCode = "404", description = "Solicitud no encontrada"),
+	        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+	    })
 	@DeleteMapping("/delete/{idSolicitud}")
-	public ResponseEntity<?> eliminarSolicitud(@PathVariable int idSolicitud) {
+	public ResponseEntity<?> eliminarSolicitud(
+			@Parameter(description = "ID de la solicitud", example = "5")
+			@PathVariable int idSolicitud) {
 	    
 		switch(solicitudService.deleteUno(idSolicitud)) {
 			case 1:  return new ResponseEntity<>("Solicitud eliminada correctamente", HttpStatus.OK);
@@ -69,9 +118,36 @@ public class SolicitudController {
 	}
 	    
 	//Crear una nueva Solicitud 
-	   
+	@Operation(
+	        summary = "Crear una nueva solicitud",
+	        description = "Permite a un usuario autenticado postularse a una vacante"
+	    )
+	    @ApiResponses(value = {
+	        @ApiResponse(responseCode = "201", description = "Solicitud creada"),
+	        @ApiResponse(responseCode = "400", description = "Solicitud duplicada"),
+	        @ApiResponse(responseCode = "409", description = "Vacante no encontrada")
+	    })   
 	@PostMapping("/add")
-	public ResponseEntity<?> crearSolicitud(@RequestBody SolicitudRequestDto dto) {
+	public ResponseEntity<?> crearSolicitud(
+			@io.swagger.v3.oas.annotations.parameters.RequestBody(
+		            description = "Datos para crear la solicitud",
+		            required = true,
+		            content = @Content(
+		                mediaType = "application/json",
+		                examples = @ExampleObject(
+		                    name = "Ejemplo de solicitud",
+		                    value = """
+		                    {
+		                      "archivo": "portafolio.pdf",
+		                      "comentarios": "Tengo experiencia en este tipo de proyectos.",
+		                      "curriculum": "cv_john_doe.pdf",
+		                      "nombreVacante": "Desarrollador Java"
+		                    }
+		                    """
+		                )
+		            )
+		        )
+			@RequestBody SolicitudRequestDto dto) {
 	    // Buscar la vacante asociada por su nombre
 	    Vacante vacante = vService.buscarPorNombre(dto.getNombreVacante());
 	    if (vacante == null) {
@@ -102,9 +178,38 @@ public class SolicitudController {
 	}
 	    
 	    //Actualizar una solicitud (PUT)
+	@Operation(
+	        summary = "Actualizar solicitud existente",
+	        description = "Permite modificar los datos de una solicitud ya creada"
+	    )
+	    @ApiResponses(value = {
+	        @ApiResponse(responseCode = "200", description = "Solicitud actualizada"),
+	        @ApiResponse(responseCode = "404", description = "Solicitud o vacante no encontrada"),
+	        @ApiResponse(responseCode = "409", description = "Nombre de vacante no válido"),
+	        @ApiResponse(responseCode = "500", description = "Error interno")
+	    })
 	@PutMapping("/edit/{idSolicitud}")
 	public ResponseEntity<?> actualizarSolicitud(
+			@Parameter(description = "ID de la solicitud a modificar", example = "10")
 	        @PathVariable int idSolicitud,
+	        @io.swagger.v3.oas.annotations.parameters.RequestBody(
+	                description = "Datos actualizados",
+	                required = true,
+	                content = @Content(
+	                    mediaType = "application/json",
+	                    examples = @ExampleObject(
+	                        name = "Ejemplo de actualización",
+	                        value = """
+	                        {
+	                          "archivo": "nuevo_portafolio.pdf",
+	                          "comentarios": "He actualizado mi experiencia.",
+	                          "curriculum": "cv_nuevo.pdf",
+	                          "nombreVacante": "Desarrollador Frontend"
+	                        }
+	                        """
+	                    )
+	                )
+	            )
 	        @RequestBody SolicitudRequestDto dto) {
 
 	    // Buscar la solicitud existente

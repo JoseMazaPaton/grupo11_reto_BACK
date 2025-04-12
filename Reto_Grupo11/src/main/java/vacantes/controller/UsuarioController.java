@@ -33,9 +33,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @RestController
 @CrossOrigin(origins = "*")
-
 @RequestMapping("/usuario")
-
 @Tag(name = "Usuario", description ="Operaciones sobre los usuarios")
 public class UsuarioController {
 	
