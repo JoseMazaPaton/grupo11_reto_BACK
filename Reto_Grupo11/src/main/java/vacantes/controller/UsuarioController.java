@@ -3,6 +3,8 @@ package vacantes.controller;
 
 import java.time.LocalDate;
 import java.util.List;
+
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +19,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-
+import vacantes.dto.UsuarioRequestDto;
+import vacantes.dto.UsuarioResponseDto;
 import vacantes.modelo.entities.Solicitud;
 import vacantes.modelo.entities.Usuario;
 import vacantes.modelo.services.UsuarioService;
@@ -39,6 +42,9 @@ public class UsuarioController {
 	
 	@Autowired
 	UsuarioService usuarioService;
+	
+	@Autowired
+	private ModelMapper modelMapper;
 	
 	@Operation(
 		    summary = "Postular a Vacante pasandole una Solicitud",
@@ -99,9 +105,21 @@ public class UsuarioController {
 				    )}
 	)    
 	@GetMapping("/all")
-	public ResponseEntity<List<Usuario>> todos() {
+	public ResponseEntity<List<UsuarioResponseDto>> todos() {
+		
+		List<Usuario> usuarios = usuarioService.buscarTodos();
+		
+        List<UsuarioResponseDto> response = usuarios.stream()
+                .map(usuario -> UsuarioResponseDto.builder()
+                        .email(usuario.getEmail())
+                        .nombre(usuario.getNombre())
+                        .apellidos(usuario.getApellidos())
+                        .fechaRegistro(usuario.getFechaRegistro())
+                        .build())
+                .toList();
 
-		return new ResponseEntity<List<Usuario>>(usuarioService.buscarTodos(), HttpStatus.OK);
+        return ResponseEntity.ok(response);
+
 		
 		// POSTMAN: localhost:8445/usuario/all
 	}
@@ -131,10 +149,15 @@ public class UsuarioController {
 	@GetMapping("/detail/{email}")
 	public ResponseEntity<?> uno(@PathVariable String email) {
 		Usuario usuario = usuarioService.buscarUno(email);
-		if (usuario != null)
-			return new ResponseEntity<Usuario>(usuario, HttpStatus.OK);
-		else
+		
+		if (usuario == null) {
 			return new ResponseEntity<String>("Este usuario no existe", HttpStatus.NOT_FOUND);
+
+		}		
+		
+		UsuarioResponseDto response = modelMapper.map(usuario, UsuarioResponseDto.class);
+		
+		return new ResponseEntity<UsuarioResponseDto>(response, HttpStatus.OK);
 		
 		// POSTMAN: localhost:8445/usuario/detail/cliente1@correo.com
 	}
@@ -155,17 +178,15 @@ public class UsuarioController {
 				    description = "Objeto Usuario con los datos actualizados (sin cambiar el email)",
 				    required = true,
 				    content = @Content(
-				        schema = @Schema(implementation = Usuario.class),
+				        schema = @Schema(implementation = UsuarioRequestDto.class),
 				        examples = @ExampleObject(
 				            name = "Ejemplo de actualización de un usuario",
 				            value = """
 				            {
+				              "email": "cliente1@correo.com",
 				              "nombre": "Cliente",
 				              "apellidos": "Premium",
 				              "password": "cliente123",
-				              "enabled": 1,
-				              "fechaRegistro": "2025-03-01",
-				              "rol": "CLIENTE"
 				            }
 				            """
 				        )
@@ -179,23 +200,36 @@ public class UsuarioController {
 		    }
 		)
 	@PutMapping("/edit/{email}")
-	public ResponseEntity<?> modificar(@PathVariable String email, @RequestBody Usuario usuarioActualizado) {
+	public ResponseEntity<?> modificar(@PathVariable String email, @RequestBody UsuarioRequestDto usuarioRequest) {
 		Usuario usuarioExistente = usuarioService.buscarUno(email);
-		if (usuarioExistente != null) {
-			usuarioActualizado.setEmail(email); // Asegurar el email no cambia.
-			switch(usuarioService.updateUno(usuarioActualizado)) {
+		
+		if (usuarioExistente == null) {
+	    	return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No hay coincidencia con el usuario");
+
+		}
+		
+	    // Convertimos el DTO a entidad Usuario por el metodo updateUno
+	    Usuario usuarioActualizado = Usuario.builder()
+	            .email(email) // Aseguramos que no cambia
+	            .nombre(usuarioRequest.getNombre())
+	            .apellidos(usuarioRequest.getApellidos())
+	            .password(usuarioRequest.getPassword())
+	            .fechaRegistro(usuarioExistente.getFechaRegistro()) // mantenemos fecha de registro
+	            .rol(usuarioExistente.getRol()) // mantenemos rol
+	            .enabled(usuarioExistente.getEnabled()) // mantenemos estado
+	            .build();
+
+		int response = usuarioService.updateUno(usuarioActualizado);
+			switch(response) {
 				case 1:  return new ResponseEntity<>("Usuario actualizado correctamente", HttpStatus.OK);
 				case 0:  return new ResponseEntity<>("Usuario no existe", HttpStatus.NOT_FOUND);
 				case -1: return new ResponseEntity<>("Esto es un problema de la base de datos, llame a servicio Tecnico", HttpStatus.BAD_REQUEST);
 				default:  return new ResponseEntity<>("Error desconocido", HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 		}	
-		else
-			return new ResponseEntity<String>("Este usuario no existe", HttpStatus.NOT_FOUND);
 		
 		// POSTMAN: localhost:8445/usuario/edit/cliente1@correo.com
 				
-	}
 
 
 			

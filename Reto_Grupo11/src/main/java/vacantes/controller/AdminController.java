@@ -118,7 +118,7 @@ public class AdminController {
 		usuario.setApellidos(altaEmpresaDto.getApellidoUsuario());
 		
 		usuario.setEnabled(1);
-		usuario.setFechaRegistro(LocalDate.now());
+		usuario.setFechaRegistro(new java.sql.Date(System.currentTimeMillis()));
 		usuario.setRol(usuario.getRol().EMPRESA);
 		
 		String password = PasswordGenerator.generateRandomPassword();
@@ -228,7 +228,7 @@ public class AdminController {
         // Mapeamos usuario y objetivo a sus entidades
         Usuario nuevoUsuario = mapper.map(nuevoAdmin, Usuario.class);
 		nuevoUsuario.setRol(Rol.ADMON);
-		nuevoUsuario.setFechaRegistro(LocalDate.now());
+		nuevoUsuario.setFechaRegistro(new java.sql.Date(System.currentTimeMillis()));
         
 	    if (uService.insertUno(nuevoUsuario) != null) {	
 	        return new ResponseEntity<>("Usuario añadido correctamente", HttpStatus.CREATED);

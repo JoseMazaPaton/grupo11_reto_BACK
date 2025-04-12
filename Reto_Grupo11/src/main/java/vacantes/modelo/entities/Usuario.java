@@ -39,7 +39,7 @@ public class Usuario implements UserDetails{
 	private int enabled = 1;
 	
 	@Column(name="fecha_Registro")
-	private LocalDate fechaRegistro;
+	private Date fechaRegistro;
 	
 	@Enumerated(EnumType.STRING)
 	@Builder.Default

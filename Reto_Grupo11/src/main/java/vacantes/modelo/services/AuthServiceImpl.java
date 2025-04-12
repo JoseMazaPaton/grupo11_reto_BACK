@@ -159,7 +159,7 @@ public class AuthServiceImpl implements AuthService{
 		        // Le añadimos la fechaDeRegistro
 		        // El rol no hace falta porque lo hemos puesto por defecto como = ROL_USUARIO en la entidad
 		        usuario.setPassword(passwordEncoder.encode(contraseña));
-		        usuario.setFechaRegistro(LocalDate.now());
+		        usuario.setFechaRegistro(new java.sql.Date(System.currentTimeMillis()));
 		        //descomentar para crear usuario con rol admon
 		        // usuario.setRol(usuario.getRol().ADMON);
 
