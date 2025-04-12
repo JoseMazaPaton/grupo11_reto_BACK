@@ -33,7 +33,7 @@ public class Solicitud {
 	private String comentarios;
 	
 	@Column(columnDefinition = "TINYINT(0)")
-	private boolean estado;
+	private int estado;
 	
 	private String curriculum;
 	

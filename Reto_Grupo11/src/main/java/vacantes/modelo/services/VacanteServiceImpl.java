@@ -73,4 +73,10 @@ public class VacanteServiceImpl implements VacanteService {
 		}
 	}
 
+	@Override
+	public Vacante buscarPorNombre(String nombre) {
+		
+		return vRepo.findByNombre(nombre);
+	}
+
 }

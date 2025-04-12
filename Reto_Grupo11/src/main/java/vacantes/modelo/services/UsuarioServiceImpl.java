@@ -105,7 +105,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 	        
 	        // Completamos la solicitud
 	        solicitud.setFecha(new Date(System.currentTimeMillis()));
-	        solicitud.setEstado(false);
+	        solicitud.setEstado(0);
 	        solicitud.setUsuario(usuario);
 	        solicitud.setVacante(vacante);
 	        

@@ -193,7 +193,7 @@ public class VacanteController {
 	    vacante.setEstatus(EstadoVacante.CUBIERTA);
 
 	    // Cambiar estado de la solicitud a adjudicada 
-	    solicitud.setEstado(true);
+	    solicitud.setEstado(1);
 
 	  
 	    vService.insertUno(vacante);
