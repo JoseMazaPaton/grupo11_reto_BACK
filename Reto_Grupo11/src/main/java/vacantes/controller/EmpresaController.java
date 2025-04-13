@@ -1,6 +1,8 @@
 package vacantes.controller;
 
 import java.util.List;
+
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +24,9 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import vacantes.dto.EmpresaRequestDto;
+import vacantes.dto.EmpresaResponseDto;
+import vacantes.dto.UsuarioResponseDto;
 import vacantes.modelo.entities.Empresa;
 import vacantes.modelo.entities.Usuario;
 import vacantes.modelo.services.EmpresaService;
@@ -37,6 +42,9 @@ public class EmpresaController {
     private EmpresaService empresaService;
     @Autowired
     private UsuarioService usuarioService;
+    
+	@Autowired
+	private ModelMapper modelMapper;
 
 	/***** CRUD *****/
     
@@ -50,8 +58,22 @@ public class EmpresaController {
 				    )}
 	) 
     @GetMapping("all")
-    public ResponseEntity<List<Empresa>> listarEmpresas() {
-		return new ResponseEntity<List<Empresa>>(empresaService.buscarTodos(), HttpStatus.OK);
+    public ResponseEntity<List<EmpresaResponseDto>> listarEmpresas() {
+		
+		List<Empresa> empresas = empresaService.buscarTodos();
+		
+		List<EmpresaResponseDto> response = empresas.stream()
+				.map(empresa -> EmpresaResponseDto.builder()
+						.idEmpresa(empresa.getIdEmpresa())
+						.cif(empresa.getCif())
+						.nombreEmpresa(empresa.getNombreEmpresa())
+						.direccionFiscal(empresa.getDireccionFiscal())
+						.pais(empresa.getPais())
+						.email(empresa.getUsuario().getEmail())
+						.build())
+				.toList();
+		
+        return ResponseEntity.ok(response);
 
     }
 
@@ -73,18 +95,26 @@ public class EmpresaController {
 		    		    ),
 		    		    @ApiResponse(
 		    		        responseCode = "404",
-		    		        description = "Not Found. La categoria no existe en la base de datos"
+		    		        description = "Not Found. La empresa no existe en la base de datos"
 		    		    )
 		    })
     @GetMapping("detail/{id}")
-    public ResponseEntity<Empresa> obtenerEmpresa(@PathVariable int id) {
+    public ResponseEntity<?> obtenerEmpresa(@PathVariable int id) {
+		
         Empresa empresa = empresaService.buscarUno(id);
-        if (empresa != null) {
-            return ResponseEntity.ok(empresa); 
+        if (empresa == null) {
+			return new ResponseEntity<String>("Esta empresa no existe", HttpStatus.NOT_FOUND);
         }
-        return ResponseEntity.notFound().build(); 
+        
+        EmpresaResponseDto response = modelMapper.map(empresa, EmpresaResponseDto.class);
+        response.setEmail(empresa.getUsuario().getEmail());
+        
+		return new ResponseEntity<EmpresaResponseDto>(response, HttpStatus.OK);
+ 
     }
 
+	/******** METODO SIN USO, ALTA EMPRESA SE HACE EN ADMIN ***********/
+	/*
 	@Operation(
 		    summary = "Dar de alta una empresa",
 		    description = "Crea una nueva empresa.",
@@ -120,13 +150,10 @@ public class EmpresaController {
 	@Transactional 
     @PostMapping("/add")
     public ResponseEntity<Empresa> crearEmpresa(@RequestBody Empresa empresa) {
-   
         Empresa nuevaEmpresa = empresaService.insertUno(empresa);
-
-       
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevaEmpresa);
     }
-	
+	*/
 	@Operation(
 		    summary = "Modificar una empresa existente",
 		    description = "Edita los datos de una empresa por su idEmpresa. El idEmpresa no se puede cambiar. Retorna mensaje, en funcion de valor entero de respuesta",
@@ -134,25 +161,23 @@ public class EmpresaController {
 		    		@Parameter(
 		    			    name = "idEmpresa",
 		    			    description = "idEmpresa de la empresa que se desea modificar",
-		    			    example = "1"
+		    			    example = "2"
 		    			)
 		    },
 		    requestBody = 	@io.swagger.v3.oas.annotations.parameters.RequestBody(
 				    description = "Objeto Empresa con los datos actualizados (sin cambiar el idEmpresa)",
 				    required = true,
 				    content = @Content(
-				        schema = @Schema(implementation = Empresa.class),
+				        schema = @Schema(implementation = EmpresaRequestDto.class),
 				        examples = @ExampleObject(
 				            name = "Ejemplo de actualización de una Empresa",
 				            value = """
 			    	            {
-			    	              "cif": "A12345678",
-			    	              "nombreEmpresa": "Tech Solutions",
-			    	              "direccionFiscal": "Calle Tecnología, 123",
-			    	              "pais": "España",
-			    	              "usuario": {
-			    	                "email": "cliente1@correo.com"
-			    	              }
+			    	              "cif": "B87654321",
+			    	              "nombreEmpresa": "Marketing Creativo",
+			    	              "direccionFiscal": "Av. Publicidad, 456",
+			    	              "pais": "Portugal",
+			    	              "email": "cliente1@correo.com"
 			    	            }
 				            """
 				        )
@@ -164,34 +189,47 @@ public class EmpresaController {
 		    }
 		)
     @PutMapping("edit/{id}")
-    public ResponseEntity<Empresa> actualizarEmpresa(@PathVariable int id, @RequestBody Empresa empresaDetalles) {
+    public ResponseEntity<EmpresaResponseDto> actualizarEmpresa(@PathVariable int id, @RequestBody EmpresaRequestDto empresaRequest) {
         
         Empresa empresa = empresaService.buscarUno(id);
+         
         if (empresa != null) {
-            
-            empresa.setCif(empresaDetalles.getCif());
-            empresa.setNombreEmpresa(empresaDetalles.getNombreEmpresa());
-            empresa.setDireccionFiscal(empresaDetalles.getDireccionFiscal());
-            empresa.setPais(empresaDetalles.getPais());
-            
-            String email = empresaDetalles.getUsuario().getEmail();
+              
+            String email = empresaRequest.getEmail();
             
             Usuario usuario = usuarioService.buscarPorEmail(email);
-            
+ 
             if (usuario != null) {
+            	
+        	    // Convertimos el DTO a entidad Empresa por el metodo updateUno
+        		Empresa empresaActualizada = Empresa.builder()
+        				.idEmpresa(id)
+        				.cif(empresaRequest.getCif())
+        				.nombreEmpresa(empresaRequest.getNombreEmpresa())
+        				.direccionFiscal(empresaRequest.getDireccionFiscal())
+        				.pais(empresaRequest.getPais())
+        				.usuario(usuario)
+        				.build();
 
-                empresa.setUsuario(usuario);
-
-                int result = empresaService.updateUno(empresa);
+                int result = empresaService.updateUno(empresaActualizada);
                 
                 if (result == 1) {
-                    return ResponseEntity.ok(empresa); 
+                    EmpresaResponseDto responseDto = EmpresaResponseDto.builder()
+                            .idEmpresa(empresaActualizada.getIdEmpresa())
+                            .cif(empresaActualizada.getCif())
+                            .nombreEmpresa(empresaActualizada.getNombreEmpresa())
+                            .direccionFiscal(empresaActualizada.getDireccionFiscal())
+                            .pais(empresaActualizada.getPais())
+                            .email(empresaActualizada.getUsuario().getEmail())
+                            .build();
+     	
+                    return ResponseEntity.ok(responseDto); 
                 } else {
                     return ResponseEntity.notFound().build(); 
                 }
             } else {
               
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
             }
         }
         
