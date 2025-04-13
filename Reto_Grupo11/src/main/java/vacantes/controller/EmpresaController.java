@@ -6,6 +6,8 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -23,6 +25,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import vacantes.dto.EmpresaRequestDto;
 import vacantes.dto.EmpresaResponseDto;
@@ -258,4 +261,84 @@ public class EmpresaController {
         }
         return ResponseEntity.notFound().build(); 
     }
+	
+	
+	
+	
+	
+	@Operation(
+		    summary = "Editar los datos de la empresa autenticada",
+		    description = "Este endpoint permite a un usuario con rol EMPRESA modificar su propia información empresarial. "
+		                + "El usuario se identifica mediante el token JWT. "
+		                + "El campo 'email' en el cuerpo del request debe coincidir con el del token o se ignorará."
+		)
+		@ApiResponses(value = {
+		    @ApiResponse(responseCode = "200", description = "Empresa actualizada correctamente",
+		                 content = @Content(mediaType = "application/json",
+		                 schema = @Schema(implementation = EmpresaResponseDto.class))),
+		    @ApiResponse(responseCode = "401", description = "Usuario no autenticado o token inválido",
+		                 content = @Content),
+		    @ApiResponse(responseCode = "403", description = "Intento de suplantación de identidad",
+		                 content = @Content),
+		    @ApiResponse(responseCode = "404", description = "Empresa no encontrada",
+		                 content = @Content),
+		    @ApiResponse(responseCode = "500", description = "Error interno al actualizar la empresa",
+		                 content = @Content)
+		})
+	@PutMapping("propia/edit")
+	public ResponseEntity<?> editarMiEmpresa(
+			 @io.swagger.v3.oas.annotations.parameters.RequestBody(
+			            description = "Datos a actualizar de la empresa. El campo 'email' debe coincidir con el autenticado.",
+			            required = true,
+			            content = @Content(schema = @Schema(implementation = EmpresaRequestDto.class))
+			        )
+			@RequestBody EmpresaRequestDto empresaRequest) {
+
+		 // 1. Obtener email del usuario autenticado desde el token JWT
+	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+	    String emailToken = auth.getName();
+
+	    // 2. Buscar el usuario autenticado
+	    Usuario usuario = usuarioService.buscarPorEmail(emailToken);
+	    if (usuario == null) {
+	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+	    }
+
+	    // 3. Buscar la empresa asociada al usuario
+	    Empresa empresa = empresaService.buscarPorUsuario(usuario);
+	    if (empresa == null) {
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+	    }
+
+	    // 4. (Opcional) Validar que el email del request no intente suplantar identidad
+	    if (empresaRequest.getEmail() != null && !empresaRequest.getEmail().equalsIgnoreCase(emailToken)) {
+	        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+	    }
+
+	    // 5. Actualizar los campos permitidos
+	    empresa.setCif(empresaRequest.getCif());
+	    empresa.setNombreEmpresa(empresaRequest.getNombreEmpresa());
+	    empresa.setDireccionFiscal(empresaRequest.getDireccionFiscal());
+	    empresa.setPais(empresaRequest.getPais());
+
+	    // 6. Guardar cambios
+	    int result = empresaService.updateUno(empresa);
+
+	    if (result == 1) {
+	        // 7. Construir respuesta DTO
+	        EmpresaResponseDto responseDto = EmpresaResponseDto.builder()
+	                .idEmpresa(empresa.getIdEmpresa())
+	                .cif(empresa.getCif())
+	                .nombreEmpresa(empresa.getNombreEmpresa())
+	                .direccionFiscal(empresa.getDireccionFiscal())
+	                .pais(empresa.getPais())
+	                .email(usuario.getEmail()) // viene del token, no del request
+	                .build();
+
+	        return ResponseEntity.ok(responseDto);
+	    }
+
+	    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	}
+	
 }

@@ -83,4 +83,10 @@ public class EmpresaServiceImpl implements EmpresaService {
 		return empresaRepository.findByNombreEmpresa(nombre);
 	}
 
+	@Override
+	public Empresa buscarPorUsuario(Usuario usuario) {
+		// TODO Auto-generated method stub
+		return empresaRepository.findByUsuario(usuario).orElse(null);
+	}
+
 }
