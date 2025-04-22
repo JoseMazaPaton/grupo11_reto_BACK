@@ -2,6 +2,7 @@ package vacantes.controller;
 
 import java.util.List;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +29,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import vacantes.dto.SolicitudRequestDto;
 import vacantes.dto.SolicitudResponseDto;
+import vacantes.dto.VacanteResponseDto;
 import vacantes.modelo.entities.Solicitud;
 import vacantes.modelo.entities.Usuario;
 import vacantes.modelo.entities.Vacante;
@@ -45,6 +47,9 @@ public class SolicitudController {
 	
 	@Autowired
 	private VacanteService vService;
+	
+	@Autowired
+	private ModelMapper modelMapper;
 	
 	
 	//Buscar todas las solicitudes (GET)
@@ -93,6 +98,57 @@ public class SolicitudController {
 
 	    return ResponseEntity.ok(respuesta);
 	}
+	
+	//Detalle de una solicitud (GET)
+		@Operation(
+		        summary = "Ver detalle de una solicitud",
+		        description = "Devuelve la información completa de una solicitud específica por su ID."
+		    )
+		@ApiResponses({
+	        @ApiResponse(
+	            responseCode = "200",
+	            description = "Solicitud encontrada",
+	            content = @Content(
+	                mediaType = "application/json",
+	                schema = @Schema(implementation = SolicitudResponseDto.class),
+	                examples = @ExampleObject(
+	                    name = "Ejemplo de solicitud",
+	                    value = """
+						{
+						    "fecha": "2025-04-02",
+						    "archivos": "archivo1.pdf",
+						    "estado": 0,
+						    "curriculum": "CV_Cliente1.pdf",
+						    "nombreVacante": "Desarrollador Java",
+						    "imagenVacante": "imagen1.jpg",
+						    "nombreEmpresa": "Tech Solutions"
+						}
+	                    """
+	                )
+	            )
+	        ),
+	        @ApiResponse(responseCode = "404", description = "Solicitud no encontrada")
+	    })
+		@GetMapping("/detail/{idSolicitud}")
+		public ResponseEntity<?> detalleSolicitud(
+				@Parameter(description = "ID de la solicitud", example = "2")
+				@PathVariable int idSolicitud) {
+			
+		    Solicitud solicitud = solicitudService.buscarUno(idSolicitud);
+		       
+		    if (solicitud == null) {
+		    	return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No hay coincidencia con la solicitud que se quiere ver");
+		    }
+
+		    
+		    SolicitudResponseDto response = modelMapper.map(solicitud, SolicitudResponseDto.class);
+
+		    response.setArchivos(solicitud.getArchivo());
+		    response.setNombreEmpresa(solicitud.getVacante().getEmpresa().getNombreEmpresa());
+
+		    return ResponseEntity.ok(response);
+		}
+	
 	
 	//Eliminar una solicitud (DELETE)
 	@Operation(
