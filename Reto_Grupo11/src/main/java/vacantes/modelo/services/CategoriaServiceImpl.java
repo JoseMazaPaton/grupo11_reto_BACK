@@ -40,11 +40,17 @@ public class CategoriaServiceImpl implements CategoriaService {
 
     @Override
     public int deleteUno(Integer id) {
-        if (categoriaRepository.existsById(id)) {
+        if (!categoriaRepository.existsById(id)) {
+            return 0; // No existe
+        }
+
+        try {
             categoriaRepository.deleteById(id);
             return 1; // Eliminación exitosa
+        } catch (Exception e) {
+            System.out.println("Error al eliminar categoría: " + e.getMessage());
+            return -1; // Error inesperado (ej: FK constraint)
         }
-        return 0; // No se encontró la categoría
     }
 
 	@Override

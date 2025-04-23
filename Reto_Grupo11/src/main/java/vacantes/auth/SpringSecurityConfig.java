@@ -96,6 +96,10 @@ public class SpringSecurityConfig {
                 // USUARIO AUTENTICADO =================================================================================
   
                 .requestMatchers(HttpMethod.GET, "/categoria/**").hasAnyRole("CLIENTE", "ADMON", "EMPRESA")
+                .requestMatchers(HttpMethod.DELETE, "/categoria/**").hasAnyRole("ADMON")
+                .requestMatchers(HttpMethod.PUT, "/categoria/**").hasAnyRole("ADMON")
+                .requestMatchers(HttpMethod.POST, "/categoria/**").hasAnyRole("ADMON")
+                
                 // VACANTES
                 .requestMatchers(HttpMethod.GET, "/vacante/todas").permitAll()
                 .requestMatchers(HttpMethod.GET, "/vacante/detalle/**").hasAnyRole("EMPRESA")

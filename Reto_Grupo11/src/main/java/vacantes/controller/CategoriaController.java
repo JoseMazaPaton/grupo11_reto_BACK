@@ -1,6 +1,8 @@
 package vacantes.controller;
 
 import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -123,19 +125,17 @@ public class CategoriaController {
 		    }
 		)
     // Crear una nueva categoría (POST)
-	@Transactional 
-    @PostMapping("/add")
-    public ResponseEntity<?> crearCategoria(@RequestBody Categoria categoria) {
-        Categoria nuevaCategoria = categoriaService.insertUno(categoria);
-        
+	@Transactional
+	@PostMapping("/add")
+	public ResponseEntity<Map<String, String>> crearCategoria(@RequestBody Categoria categoria) {
+	    Categoria nuevaCategoria = categoriaService.insertUno(categoria);
+
 	    if (nuevaCategoria != null) {
-	        return new ResponseEntity<>("Categoria añadida correctamente", HttpStatus.CREATED);
+	        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "✅ Categoría añadida correctamente"));
 	    } else {
-	        return new ResponseEntity<>("La categoria ya existe o hubo un error", HttpStatus.BAD_REQUEST);
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "❌ La categoría ya existe o hubo un error"));
 	    }
-		
-		// POSTMAN: localhost:8445/categoria/add   
-    }
+	}
 	
 	
 	@Operation(
@@ -171,22 +171,27 @@ public class CategoriaController {
 		    }
 		)
     // Actualizar una categoría existente (PUT)
-    @PutMapping("/edit/{idCategoria}")
-    public ResponseEntity<?> actualizarCategoria(@PathVariable int idCategoria, @RequestBody Categoria categoriaActualizado) {
-    	Categoria categoriaExistente = categoriaService.buscarUno(idCategoria);
-		if (categoriaExistente != null) {
-			categoriaActualizado.setIdCategoria(idCategoria); // Asegurar el email no cambia.
-			switch(categoriaService.updateUno(categoriaActualizado)) {
-				case 1:  return new ResponseEntity<>("✅ Categoría actualizada correctamente", HttpStatus.OK);
-				case 0:  return new ResponseEntity<>("❌ Error: No se encontró la categoría", HttpStatus.NOT_FOUND);
-				default:  return new ResponseEntity<>("Error desconocido", HttpStatus.INTERNAL_SERVER_ERROR);
-			}
-		}	
-		else
-			return new ResponseEntity<String>("Esta categoria no existe", HttpStatus.NOT_FOUND);
-		
-		// POSTMAN: localhost:8445/categoria/edit/5
-    }
+	@PutMapping("/edit/{idCategoria}")
+	public ResponseEntity<Map<String, String>> actualizarCategoria(
+	        @PathVariable int idCategoria,
+	        @RequestBody Categoria categoriaActualizado) {
+
+	    Categoria categoriaExistente = categoriaService.buscarUno(idCategoria);
+	    if (categoriaExistente != null) {
+	        categoriaActualizado.setIdCategoria(idCategoria);
+
+	        switch (categoriaService.updateUno(categoriaActualizado)) {
+	            case 1:
+	                return ResponseEntity.ok(Map.of("message", "✅ Categoría actualizada correctamente"));
+	            case 0:
+	                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "❌ Error: No se encontró la categoría"));
+	            default:
+	                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Error desconocido"));
+	        }
+	    } else {
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Esta categoría no existe"));
+	    }
+	}
     
 	@Operation(
 		    summary = "Eliminar una categoria",
@@ -205,16 +210,18 @@ public class CategoriaController {
 		    }
 		)
     // Eliminar una categoría (DELETE)
-    @DeleteMapping("/delete/{idCategoria}")
-    public ResponseEntity<?> eliminarCategoria(@PathVariable int idCategoria) {
-    	
-		switch(categoriaService.deleteUno(idCategoria)) {
-			case 1:  return new ResponseEntity<>("✅ Categoría eliminada correctamente", HttpStatus.OK);
-			case 0:  return new ResponseEntity<>("❌ Error: No se encontró la categoría", HttpStatus.NOT_FOUND);
-			default:  return new ResponseEntity<>("Error desconocido", HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-	
-		// POSTMAN: localhost:8445/categoria/delete/5   	
-    }
+	@DeleteMapping("/delete/{idCategoria}")
+	public ResponseEntity<Map<String, String>> eliminarCategoria(@PathVariable int idCategoria) {
+	    switch (categoriaService.deleteUno(idCategoria)) {
+	        case 1:
+	            return ResponseEntity.ok(Map.of("message", "✅ Categoría eliminada correctamente"));
+	        case 0:
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "❌ Error: No se encontró la categoría"));
+	        case -1:
+	            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "❌ Error: No se puede eliminar la categoría porque está en uso"));
+	        default:
+	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Error desconocido"));
+	    }
+	}
        
 }
