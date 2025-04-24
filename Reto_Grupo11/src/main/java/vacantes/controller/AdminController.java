@@ -3,6 +3,7 @@ package vacantes.controller;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.util.Base64;
+import java.util.Map;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -170,23 +171,128 @@ public class AdminController {
 		    }
 		)
 	@PutMapping("/deshabilitar/{email}")
-	public ResponseEntity<?> baja(@PathVariable String email) {
-		Usuario usuario = uService.buscarUno(email);
-		
-		if (usuario != null) {
-			usuario.setEnabled(0);
-			switch(uService.updateUno(usuario)) {
-				case 1:  return new ResponseEntity<>("Este usuario ha sido deshabilitado", HttpStatus.OK);
-				case 0:  return new ResponseEntity<>("Usuario no existe", HttpStatus.NOT_FOUND);
-				case -1: return new ResponseEntity<>("Esto es un problema de la base de datos, llame a servicio Tecnico", HttpStatus.BAD_REQUEST);
-				default:  return new ResponseEntity<>("Error desconocido", HttpStatus.INTERNAL_SERVER_ERROR);
-			}
-		}	else {
-			return new ResponseEntity<String>("Este usuario no existe", HttpStatus.NOT_FOUND);
-		}
+	public ResponseEntity<Map<String, String>> baja(@PathVariable String email) {
+	    Usuario usuario = uService.buscarUno(email);
+
+	    if (usuario != null) {
+	        usuario.setEnabled(0);
+	        switch (uService.updateUno(usuario)) {
+	            case 1:
+	                return ResponseEntity.ok(Map.of("message", "✅ Usuario deshabilitado correctamente"));
+	            case 0:
+	                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                        .body(Map.of("message", "❌ Usuario no existe"));
+	            case -1:
+	                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+	                        .body(Map.of("message", "⚠️ Problema en la base de datos"));
+	            default:
+	                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                        .body(Map.of("message", "Error desconocido"));
+	        }
+	    } else {
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                .body(Map.of("message", "❌ Este usuario no existe"));
+	    }
+	}
 	
-		// POSTMAN: localhost:8445/admin/deshabilitar/nuevo@correo.com
-				
+	
+	@Operation(
+		    summary = "Habilitar un usuario",
+		    description = "Permite volver a habilitar un usuario previamente deshabilitado (enabled = 1) a partir de su email.",
+		    parameters = {
+		        @Parameter(
+		            name = "email",
+		            description = "Email del usuario a habilitar",
+		            required = true,
+		            example = "usuario@correo.com"
+		        )
+		    },
+		    responses = {
+		        @ApiResponse(
+		            responseCode = "200",
+		            description = "Usuario habilitado correctamente",
+		            content = @Content(
+		                mediaType = "application/json",
+		                examples = @ExampleObject(
+		                    name = "Respuesta exitosa",
+		                    value = """
+		                    {
+		                      "message": "✅ Usuario habilitado correctamente"
+		                    }
+		                    """
+		                )
+		            )
+		        ),
+		        @ApiResponse(
+		            responseCode = "404",
+		            description = "Usuario no encontrado",
+		            content = @Content(
+		                mediaType = "application/json",
+		                examples = @ExampleObject(
+		                    name = "Usuario no encontrado",
+		                    value = """
+		                    {
+		                      "message": "❌ Usuario no encontrado"
+		                    }
+		                    """
+		                )
+		            )
+		        ),
+		        @ApiResponse(
+		            responseCode = "400",
+		            description = "Error en la base de datos",
+		            content = @Content(
+		                mediaType = "application/json",
+		                examples = @ExampleObject(
+		                    name = "Error BBDD",
+		                    value = """
+		                    {
+		                      "message": "⚠️ Error en la base de datos"
+		                    }
+		                    """
+		                )
+		            )
+		        ),
+		        @ApiResponse(
+		            responseCode = "500",
+		            description = "Error interno del servidor",
+		            content = @Content(
+		                mediaType = "application/json",
+		                examples = @ExampleObject(
+		                    name = "Error desconocido",
+		                    value = """
+		                    {
+		                      "message": "Error desconocido"
+		                    }
+		                    """
+		                )
+		            )
+		        )
+		    }
+		)	
+	@PutMapping("/habilitar/{email}")
+	public ResponseEntity<Map<String, String>> habilitar(@PathVariable String email) {
+	    Usuario usuario = uService.buscarUno(email);
+
+	    if (usuario != null) {
+	        usuario.setEnabled(1);
+	        switch (uService.updateUno(usuario)) {
+	            case 1:
+	                return ResponseEntity.ok(Map.of("message", "✅ Usuario habilitado correctamente"));
+	            case 0:
+	                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                        .body(Map.of("message", "❌ Usuario no encontrado"));
+	            case -1:
+	                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+	                        .body(Map.of("message", "⚠️ Error en la base de datos"));
+	            default:
+	                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                        .body(Map.of("message", "Error desconocido"));
+	        }
+	    } else {
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                .body(Map.of("message", "❌ Este usuario no existe"));
+	    }
 	}
 	
 	
@@ -218,26 +324,24 @@ public class AdminController {
 		)
 	@Transactional  // Si falla, se revierte el usuario
 	@PostMapping("/add")
-	public ResponseEntity<?> altaAdmon(@RequestBody UsuarioRequestDto nuevoAdmin) {
-		
-		if (uService.buscarPorEmail(nuevoAdmin.getEmail()) != null) {
-			return ResponseEntity.status(HttpStatus.CONFLICT)
-					.body("Ese email ya esta en uso, usa otro");
-		}
-				
-        // Mapeamos usuario y objetivo a sus entidades
-        Usuario nuevoUsuario = mapper.map(nuevoAdmin, Usuario.class);
-		nuevoUsuario.setRol(Rol.ADMON);
-		nuevoUsuario.setFechaRegistro(new java.sql.Date(System.currentTimeMillis()));
-        
-	    if (uService.insertUno(nuevoUsuario) != null) {	
-	        return new ResponseEntity<>("Usuario añadido correctamente", HttpStatus.CREATED);
-	    } else {
-	        return new ResponseEntity<>("El usuario ya existe o hubo un error", HttpStatus.BAD_REQUEST);
+	public ResponseEntity<Map<String, String>> altaAdmon(@RequestBody UsuarioRequestDto nuevoAdmin) {
+	    
+	    if (uService.buscarPorEmail(nuevoAdmin.getEmail()) != null) {
+	        return ResponseEntity.status(HttpStatus.CONFLICT)
+	                .body(Map.of("message", "Ese email ya está en uso, usa otro"));
 	    }
-		
-		// POSTMAN: localhost:8445/admin/add
-			
+
+	    Usuario nuevoUsuario = mapper.map(nuevoAdmin, Usuario.class);
+	    nuevoUsuario.setRol(Rol.ADMON);
+	    nuevoUsuario.setFechaRegistro(new java.sql.Date(System.currentTimeMillis()));
+
+	    if (uService.insertUno(nuevoUsuario) != null) {
+	        return ResponseEntity.status(HttpStatus.CREATED)
+	                .body(Map.of("message", "✅ Administrador creado correctamente"));
+	    } else {
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+	                .body(Map.of("message", "❌ El usuario ya existe o hubo un error"));
+	    }
 	}
 	
 }

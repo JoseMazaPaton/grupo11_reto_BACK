@@ -109,14 +109,16 @@ public class UsuarioController {
 		
 		List<Usuario> usuarios = usuarioService.buscarTodos();
 		
-        List<UsuarioResponseDto> response = usuarios.stream()
-                .map(usuario -> UsuarioResponseDto.builder()
-                        .email(usuario.getEmail())
-                        .nombre(usuario.getNombre())
-                        .apellidos(usuario.getApellidos())
-                        .fechaRegistro(usuario.getFechaRegistro())
-                        .build())
-                .toList();
+		List<UsuarioResponseDto> response = usuarios.stream()
+	            .map(usuario -> UsuarioResponseDto.builder()
+	                    .email(usuario.getEmail())
+	                    .nombre(usuario.getNombre())
+	                    .apellidos(usuario.getApellidos())
+	                    .fechaRegistro(usuario.getFechaRegistro())
+	                    .rol(usuario.getRol().name())
+	                    .enabled(usuario.getEnabled())
+	                    .build())
+	            .toList();
 
         return ResponseEntity.ok(response);
 

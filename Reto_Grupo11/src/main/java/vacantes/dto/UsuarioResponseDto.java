@@ -6,7 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
+import vacantes.modelo.entities.Rol;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Data
@@ -27,4 +27,7 @@ public class UsuarioResponseDto {
 
     @Schema(description = "Fecha en la que se registró el usuario", example = "2024-05-12")
     private Date fechaRegistro;
+    
+    private String rol;
+    private Integer enabled;
 }
