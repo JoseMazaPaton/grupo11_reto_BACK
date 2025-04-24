@@ -1,11 +1,13 @@
 package vacantes.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -34,6 +36,7 @@ import vacantes.modelo.entities.Solicitud;
 import vacantes.modelo.entities.Usuario;
 import vacantes.modelo.entities.Vacante;
 import vacantes.modelo.services.SolicitudService;
+import vacantes.modelo.services.UsuarioService;
 import vacantes.modelo.services.VacanteService;
 
 @RestController
@@ -47,6 +50,9 @@ public class SolicitudController {
 	
 	@Autowired
 	private VacanteService vService;
+	
+	@Autowired
+	private UsuarioService usuarioService;
 	
 	@Autowired
 	private ModelMapper modelMapper;
@@ -298,4 +304,43 @@ public class SolicitudController {
 	        default -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualizar");
 	    };
 	}
+	
+	
+	@GetMapping("/missolicitudes")
+	public ResponseEntity<?> obtenerMisSolicitudes() {
+	    // 1. Obtener email del usuario autenticado desde el token JWT
+	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+	    String email = auth.getName();
+
+	    // 2. Buscar el usuario autenticado
+	    Usuario usuario = usuarioService.buscarPorEmail(email);
+	    if (usuario == null) {
+	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+	            .body(Map.of("message", "❌ Usuario no autorizado"));
+	    }
+
+	    // 3. Buscar solicitudes asociadas al usuario
+	    List<Solicitud> solicitudes = solicitudService.buscarPorUsuario(usuario);
+
+	    // 4. Si no hay solicitudes, devolver mensaje en formato Map
+	    if (solicitudes.isEmpty()) {
+	        return ResponseEntity.ok(Map.of("message", "📭 No tienes solicitudes registradas"));
+	    }
+
+	    // 5. Mapear a DTOs
+	    List<SolicitudResponseDto> respuesta = solicitudes.stream()
+	        .map(solicitud -> SolicitudResponseDto.builder()
+	            .fecha(solicitud.getFecha())
+	            .archivos(solicitud.getArchivo())
+	            .estado(solicitud.getEstado())
+	            .curriculum(solicitud.getCurriculum())
+	            .nombreVacante(solicitud.getVacante().getNombre())
+	            .imagenVacante(solicitud.getVacante().getImagen())
+	            .nombreEmpresa(solicitud.getVacante().getEmpresa().getNombreEmpresa())
+	            .build())
+	        .toList();
+
+	    return ResponseEntity.ok(respuesta);
+	}
+	
 }

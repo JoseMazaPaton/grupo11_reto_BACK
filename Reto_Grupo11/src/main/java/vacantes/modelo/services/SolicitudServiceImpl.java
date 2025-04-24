@@ -83,4 +83,14 @@ public class SolicitudServiceImpl implements SolicitudService {
 	    }
 	}
 
+	@Override
+	public List<Solicitud> buscarPorUsuario(Usuario usuario) {
+	    try {
+	        return sRepo.findByUsuario(usuario);
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return List.of();
+	    }
+	}
+
 }
