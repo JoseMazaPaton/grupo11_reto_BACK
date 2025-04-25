@@ -122,7 +122,10 @@ public class AdminController {
 		usuario.setFechaRegistro(new java.sql.Date(System.currentTimeMillis()));
 		usuario.setRol(usuario.getRol().EMPRESA);
 		
-		String password = PasswordGenerator.generateRandomPassword();
+		// Se comenta por funcionalidad durante las pruebas
+		// String password = PasswordGenerator.generateRandomPassword();
+		
+		String password = "123456";
 		
 		usuario.setPassword(passwordEncoder.encode(password));
 		

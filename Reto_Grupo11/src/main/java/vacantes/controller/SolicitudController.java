@@ -32,9 +32,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import vacantes.dto.SolicitudRequestDto;
 import vacantes.dto.SolicitudResponseDto;
 import vacantes.dto.VacanteResponseDto;
+import vacantes.modelo.entities.Empresa;
 import vacantes.modelo.entities.Solicitud;
 import vacantes.modelo.entities.Usuario;
 import vacantes.modelo.entities.Vacante;
+import vacantes.modelo.services.EmpresaService;
 import vacantes.modelo.services.SolicitudService;
 import vacantes.modelo.services.UsuarioService;
 import vacantes.modelo.services.VacanteService;
@@ -53,6 +55,9 @@ public class SolicitudController {
 	
 	@Autowired
 	private UsuarioService usuarioService;
+	
+	@Autowired
+	private EmpresaService empresaService;
 	
 	@Autowired
 	private ModelMapper modelMapper;
@@ -341,6 +346,87 @@ public class SolicitudController {
 	        .toList();
 
 	    return ResponseEntity.ok(respuesta);
+	}
+	
+	
+	
+	@Operation(
+		    summary = "Solicitudes recibidas por la empresa autenticada",
+		    description = "Devuelve todas las solicitudes para las vacantes creadas por la empresa logueada"
+		)
+		@GetMapping("/empresa")
+		public ResponseEntity<?> solicitudesPorEmpresa() {
+		    // Obtener email desde el token JWT
+		    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		    String email = auth.getName();
+
+		    Empresa empresa = empresaService.buscarPorEmail(email);
+		    if (empresa == null) {
+		        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+		            .body(Map.of("message", "❌ Empresa no autorizada"));
+		    }
+
+		    List<Solicitud> solicitudes = solicitudService.buscarPorEmpresa(empresa);
+
+		    if (solicitudes.isEmpty()) {
+		        return ResponseEntity.ok(Map.of("message", "📭 No hay solicitudes registradas"));
+		    }
+
+		    List<SolicitudResponseDto> respuesta = solicitudes.stream()
+		    	    .filter(s -> s.getVacante() != null && s.getUsuario() != null)
+		    	    .map(s -> SolicitudResponseDto.builder()
+		    	        .fecha(s.getFecha())
+		    	        .archivos(s.getArchivo())
+		    	        .estado(s.getEstado())
+		    	        .curriculum(s.getCurriculum())
+		    	        .nombreVacante(s.getVacante().getNombre())
+		    	        .imagenVacante(s.getVacante().getImagen())
+		    	        .nombreEmpresa(empresa.getNombreEmpresa())
+		    	        .emailUsuario(s.getUsuario().getEmail())
+		    	        .nombreUsuario(s.getUsuario().getNombre() + " " + s.getUsuario().getApellidos())
+		    	        .build())
+		    	    .toList();
+		    return ResponseEntity.ok(respuesta);
+		}
+	
+	
+	@PutMapping("/adjudicar/{idSolicitud}")
+	@Operation(
+	    summary = "Adjudicar solicitud a un candidato",
+	    description = "Marca una solicitud como adjudicada (estado = 1). Solo una por vacante.",
+	    parameters = @Parameter(name = "idSolicitud", description = "ID de la solicitud a adjudicar", example = "3"),
+	    responses = {
+	        @ApiResponse(responseCode = "200", description = "Solicitud adjudicada correctamente"),
+	        @ApiResponse(responseCode = "404", description = "Solicitud no encontrada"),
+	        @ApiResponse(responseCode = "400", description = "Ya hay una adjudicación previa para esta vacante")
+	    }
+	)
+	public ResponseEntity<?> adjudicarSolicitud(@PathVariable int idSolicitud) {
+	    Solicitud solicitud = solicitudService.buscarUno(idSolicitud);
+	    if (solicitud == null) {
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Solicitud no encontrada");
+	    }
+
+	    // Verificar si ya hay una adjudicación para esta vacante
+	    boolean yaAdjudicada = solicitudService
+	        .buscarPorVacante(solicitud.getVacante())
+	        .stream()
+	        .anyMatch(s -> s.getEstado() == 1);
+
+	    if (yaAdjudicada) {
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+	            .body(Map.of("message", "⚠️ Ya hay una solicitud adjudicada para esta vacante"));
+	    }
+
+	    solicitud.setEstado(1);
+	    int resultado = solicitudService.updateUno(solicitud);
+
+	    if (resultado == 1) {
+	        return ResponseEntity.ok(Map.of("message", "✅ Solicitud adjudicada correctamente"));
+	    } else {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	            .body(Map.of("message", "❌ Error al adjudicar solicitud"));
+	    }
 	}
 	
 }

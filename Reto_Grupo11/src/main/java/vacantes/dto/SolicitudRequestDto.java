@@ -24,4 +24,5 @@ public class SolicitudRequestDto {
 
     @Schema(description = "Nombre de la vacante a la que se postula", example = "Desarrollador Java")
     private String nombreVacante;
+
 }

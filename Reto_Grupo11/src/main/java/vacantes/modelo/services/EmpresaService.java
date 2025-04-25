@@ -8,4 +8,5 @@ public interface EmpresaService extends CrudGenerico<Empresa, Integer> {
 
 		Empresa buscarPorNombre (String nombre);
 		Empresa buscarPorUsuario (Usuario usuario);
+		Empresa buscarPorEmail (String email);
 	} 

@@ -13,4 +13,6 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Integer> {
 	
 	Optional<Empresa> findByUsuario(Usuario usuario);
 	
+	public Empresa  findByUsuario_Email(String email);
+	
 }

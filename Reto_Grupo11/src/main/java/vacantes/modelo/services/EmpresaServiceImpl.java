@@ -1,6 +1,7 @@
 package vacantes.modelo.services;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -87,6 +88,12 @@ public class EmpresaServiceImpl implements EmpresaService {
 	public Empresa buscarPorUsuario(Usuario usuario) {
 		// TODO Auto-generated method stub
 		return empresaRepository.findByUsuario(usuario).orElse(null);
+	}
+
+	@Override
+	public Empresa buscarPorEmail(String email) {
+		// TODO Auto-generated method stub
+		return empresaRepository.findByUsuario_Email(email);
 	}
 
 }
