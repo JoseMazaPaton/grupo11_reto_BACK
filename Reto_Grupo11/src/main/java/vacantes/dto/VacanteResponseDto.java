@@ -7,45 +7,44 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import vacantes.modelo.entities.EstadoVacante;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Schema(description = "DTO de respuesta con toda la información de una vacante publicada")
+@Schema(description = "DTO de respuesta con la información básica de una vacante")
 public class VacanteResponseDto {
 
-    @Schema(description = "Identificador único de la vacante", example = "7")
+    @Schema(description = "ID de la vacante", example = "7")
     private int idVacante;
 
-    @Schema(description = "Nombre del puesto o vacante", example = "Desarrollador Frontend")
+    @Schema(description = "Nombre de la vacante", example = "Desarrollador Frontend")
     private String nombre;
 
-    @Schema(description = "Descripción del puesto", example = "Desarrollo de interfaces con Angular, consumo de APIs REST, y diseño responsive.")
+    @Schema(description = "Descripción de la vacante", example = "Trabajo en Angular y APIs REST")
     private String descripcion;
 
-    @Schema(description = "Fecha de publicación de la vacante", example = "2025-04-12")
+    @Schema(description = "Fecha de publicación", example = "2025-04-12")
     private Date fecha;
 
-    @Schema(description = "Salario bruto mensual en euros", example = "2500.00")
+    @Schema(description = "Salario ofertado", example = "2500.00")
     private double salario;
 
-    @Schema(description = "Estado actual de la vacante", example = "CREADA")
-    private EstadoVacante estatus;
+    @Schema(description = "Estado de la vacante", example = "CREADA")
+    private String estatus;  // 👈 CAMBIAMOS a String
 
     @Schema(description = "Indica si la vacante es destacada", example = "true")
     private boolean destacado;
 
-    @Schema(description = "Nombre del archivo de imagen asociado", example = "frontend-vacante.jpg")
+    @Schema(description = "Nombre del archivo de imagen asociado", example = "frontend.jpg")
     private String imagen;
 
-    @Schema(description = "Detalles adicionales del puesto", example = "Ofrecemos beneficios sociales y formación continua.")
+    @Schema(description = "Detalles adicionales", example = "Contrato indefinido, jornada completa")
     private String detalles;
 
-    @Schema(description = "Categoría profesional de la vacante", example = "Desarrollo Web")
+    @Schema(description = "Nombre de la categoría asociada", example = "Desarrollo Web")
     private String categoria;
 
-    @Schema(description = "Nombre de la empresa que ofrece la vacante", example = "Tech Solutions")
+    @Schema(description = "Nombre de la empresa", example = "Tech Solutions")
     private String empresa;
 }

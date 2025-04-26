@@ -2,12 +2,15 @@ package vacantes.controller;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +26,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.transaction.Transactional;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -118,56 +122,59 @@ public class VacanteController {
 	        @ApiResponse(responseCode = "404", description = "Categoría o empresa no encontrada")
 	    })
 	@PostMapping("/add")
-	public ResponseEntity<?> altaVacante (
-			@io.swagger.v3.oas.annotations.parameters.RequestBody(
-		            description = "Datos para la nueva vacante",
-		            required = true,
-		            content = @Content(
-		                mediaType = "application/json",
-		                examples = @ExampleObject(
-		                    name = "Ejemplo de alta vacante",
-		                    value = """
-		                    {
-		                      "nombre": "QA Tester",
-		                      "descripcion": "Pruebas automáticas de software",
-		                      "salario": 2200,
-		                      "imagen": "qa.jpg",
-		                      "detalles": "Horario flexible, jornada completa",
-		                      "nombreCategoria": "Calidad",
-		                      "nombreEmpresa": "SoftControl"
-		                    }
-		                    """
-		                )
-		            )
-		        )
-			@RequestBody VacanteRequestDto request){
-		
-		Categoria categoria = cService.buscarPorNombre(request.getNombreCategoria());
-		if(categoria == null) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No hay coincidencia con la categoria: " + request.getNombreCategoria());
-		}
-		  
-		Empresa empresa =  eService.buscarPorNombre(request.getNombreEmpresa());
-		
-		if(empresa == null) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No hay coincidencia con la empresa: " + request.getNombreEmpresa());
-		}
-		
-		Vacante vacante = modelMapper.map(request, Vacante.class);
+	public ResponseEntity<?> altaVacante(@io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Datos para la nueva vacante",
+            required = true,
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    name = "Ejemplo de alta vacante",
+                    value = """
+                    {
+                      "nombre": "QA Tester",
+                      "descripcion": "Pruebas automáticas de software",
+                      "salario": 2200,
+                      "imagen": "qa.jpg",
+                      "detalles": "Horario flexible, jornada completa",
+                      "nombreCategoria": "Calidad",
+                    }
+                    """
+                )
+            )
+        )@RequestBody VacanteRequestDto request) {
+	    
+	    // 1. Sacar email de la empresa autenticada
+	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+	    String email = auth.getName(); // 👈 directamente del token
+
+	    // 2. Buscar la empresa por su email
+	    Empresa empresa = eService.buscarPorEmail(email);
+	    if (empresa == null) {
+	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+	                .body(Map.of("message", "❌ Empresa no autorizada"));
+	    }
+
+	    // 3. Buscar categoría por nombre
+	    Categoria categoria = cService.buscarPorNombre(request.getNombreCategoria());
+	    if (categoria == null) {
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                .body(Map.of("message", "❌ Categoría no encontrada: " + request.getNombreCategoria()));
+	    }
+
+	    // 4. Crear y guardar la vacante
+	    Vacante vacante = modelMapper.map(request, Vacante.class);
 	    vacante.setCategoria(categoria);
 	    vacante.setEmpresa(empresa);
-	    
 	    vacante.setEstatus(EstadoVacante.CREADA);
 	    vacante.setDestacado(true);
-	    
 	    vacante.setFecha(new java.sql.Date(System.currentTimeMillis()));
-	    
+
 	    vService.insertUno(vacante);
-	    
+
 	    return ResponseEntity.status(HttpStatus.CREATED)
-	    		.body("Vacante creada correctamente");
-		
+	            .body(Map.of("message", "✅ Vacante creada correctamente"));
 	}
+
 	
 	@Operation(
 	        summary = "Modificar una vacante existente",
@@ -177,43 +184,46 @@ public class VacanteController {
 	        @ApiResponse(responseCode = "200", description = "Vacante actualizada correctamente"),
 	        @ApiResponse(responseCode = "404", description = "Vacante, categoría o empresa no encontrada")
 	    })
+	@Transactional
 	@PutMapping("/modificar/{idVacante}")
-	public ResponseEntity<String> modificarVacante(
-									@Parameter(description = "ID de la vacante a modificar", example = "5")
-									@PathVariable int idVacante,
-	        						@RequestBody VacanteRequestDto request) {
+	public ResponseEntity<?> modificarVacante(
+	        @PathVariable int idVacante,
+	        @RequestBody VacanteRequestDto request) {
 
-	    
 	    Vacante vacante = vService.buscarUno(idVacante);
-	    
+
 	    if (vacante == null) {
-	    	return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No hay coincidencia con la vacante: " + request.getNombre());
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                .body(Map.of("message", "❌ No hay coincidencia con la vacante"));
 	    }
-	        
 
 	    Categoria categoria = cService.buscarPorNombre(request.getNombreCategoria());
 	    if (categoria == null) {
-	    	return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No hay coincidencia con la categoria: " + request.getNombreCategoria());
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                .body(Map.of("message", "❌ Categoría no encontrada"));
 	    }
 
-	    Empresa empresa = eService.buscarPorNombre(request.getNombreEmpresa());
+	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+	    String email = auth.getName();
 
+	    Empresa empresa = eService.buscarPorEmail(email);
 	    if (empresa == null) {
-	    	return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No hay coincidencia con la empresa: " + request.getNombreEmpresa());
+	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+	                .body(Map.of("message", "❌ Empresa no autorizada"));
 	    }
 
-	   
-	    modelMapper.map(request, vacante);
-	    vacante.setIdVacante(idVacante); // Por si ModelMapper lo borra (aunque no debería)
-
-	    
+	    // 👉 MAPEO MANUAL (no usar modelMapper aquí)
+	    vacante.setNombre(request.getNombre());
+	    vacante.setDescripcion(request.getDescripcion());
+	    vacante.setSalario(request.getSalario());
+	    vacante.setDetalles(request.getDetalles());
+	    vacante.setImagen(request.getImagen());
 	    vacante.setCategoria(categoria);
 	    vacante.setEmpresa(empresa);
 
-	   
-	    vService.insertUno(vacante);
+	    vService.updateUno(vacante);
 
-	    return ResponseEntity.ok("Vacante actualizada con éxito");
+	    return ResponseEntity.ok(Map.of("message", "✅ Vacante actualizada con éxito"));
 	}
 	
 	@Operation(
@@ -340,14 +350,101 @@ public class VacanteController {
 	    return ResponseEntity.ok("Vacante asignada y solicitud adjudicada con éxito");
 	}
 	
-	
+	 @Operation(
+			    summary = "Obtener todas las vacantes publicadas por la empresa logueada",
+			    description = "Devuelve la lista de vacantes creadas por la empresa autenticada, incluyendo nombre, estado, salario, fecha de publicación y otros datos relevantes.",
+			    responses = {
+			        @ApiResponse(
+			            responseCode = "200",
+			            description = "Lista de vacantes obtenida correctamente",
+			            content = @Content(
+			                mediaType = "application/json",
+			                examples = @ExampleObject(
+			                    name = "Ejemplo de respuesta",
+			                    value = """
+			                    [
+			                      {
+			                        "idVacante": 1,
+			                        "nombre": "Desarrollador Frontend",
+			                        "descripcion": "Desarrollo de interfaces con Angular",
+			                        "fecha": "2025-04-22",
+			                        "salario": 2500.0,
+			                        "estatus": "CREADA",
+			                        "destacado": true,
+			                        "imagen": "frontend.jpg",
+			                        "detalles": "Contrato indefinido, posibilidad de teletrabajo",
+			                        "categoria": "Desarrollo Web",
+			                        "empresa": "Tech Solutions"
+			                      },
+			                      {
+			                        "idVacante": 2,
+			                        "nombre": "Backend Developer",
+			                        "descripcion": "APIs REST en Java Spring",
+			                        "fecha": "2025-04-20",
+			                        "salario": 2800.0,
+			                        "estatus": "CREADA",
+			                        "destacado": false,
+			                        "imagen": "backend.jpg",
+			                        "detalles": "Contrato a largo plazo",
+			                        "categoria": "Backend",
+			                        "empresa": "Tech Solutions"
+			                      }
+			                    ]
+			                    """
+			                )
+			            )
+			        ),
+			        @ApiResponse(
+			            responseCode = "401",
+			            description = "Empresa no autenticada o no autorizada"
+			        ),
+			        @ApiResponse(
+			            responseCode = "404",
+			            description = "No se encontraron vacantes publicadas"
+			        )
+			    }
+			)
+			@GetMapping("/misvacantes")
+			public ResponseEntity<?> misVacantes() {
+			    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+			    String email = auth.getName();
+
+			    Empresa empresa = eService.buscarPorEmail(email);
+			    if (empresa == null) {
+			        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+			                .body(Map.of("message", "❌ Empresa no autorizada"));
+			    }
+			    System.out.println("Empresa ID autenticada: " + empresa.getIdEmpresa());
+			    List<Vacante> vacantes = vService.buscarPorEmpresa(empresa);
+			    
+			    if (vacantes.isEmpty()) {
+			        return ResponseEntity.ok(Map.of("message", "📭 No tienes vacantes publicadas"));
+			    }
+
+			    List<VacanteResponseDto> respuesta = vacantes.stream()
+			    	    .map(v -> new VacanteResponseDto(
+			    	        v.getIdVacante(),
+			    	        v.getNombre(),
+			    	        v.getDescripcion(),
+			    	        v.getFecha(),
+			    	        v.getSalario(),
+			    	        v.getEstatus().name(), // Convertimos el enum EstadoVacante a String
+			    	        v.isDestacado(), // boolean -> método correcto es isDestacado()
+			    	        v.getImagen(),
+			    	        v.getDetalles(),
+			    	        (v.getCategoria() != null ? v.getCategoria().getNombre() : ""),
+			    	        (v.getEmpresa() != null ? v.getEmpresa().getNombreEmpresa() : "")
+			    	    ))
+			    	    .collect(Collectors.toList());
+
+			    return ResponseEntity.ok(respuesta);
+			}
 	
 	
 	private VacanteResponseDto convertToDto(Vacante vacante) {
         VacanteResponseDto dto = modelMapper.map(vacante, VacanteResponseDto.class);
         // Mapeo manual de campos que ModelMapper no puede resolver automáticamente
         dto.setCategoria(vacante.getCategoria().getNombre());
-        dto.setEmpresa(vacante.getEmpresa().getNombreEmpresa());
         return dto;
     }
 

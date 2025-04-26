@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import vacantes.modelo.entities.Empresa;
 import vacantes.modelo.entities.Vacante;
 import vacantes.repository.VacanteRepository;
 
@@ -77,6 +79,12 @@ public class VacanteServiceImpl implements VacanteService {
 	public Vacante buscarPorNombre(String nombre) {
 		
 		return vRepo.findByNombre(nombre);
+	}
+
+	@Override
+	public List<Vacante> buscarPorEmpresa(Empresa empresa) {
+		// TODO Auto-generated method stub
+		return vRepo.findByEmpresa(empresa);
 	}
 
 }

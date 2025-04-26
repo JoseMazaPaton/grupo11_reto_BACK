@@ -123,9 +123,10 @@ public class SpringSecurityConfig {
 
                 // EMPRESA
                 
-                .requestMatchers(HttpMethod.GET, "/empresa/**").hasAnyRole("ADMON")
+                .requestMatchers(HttpMethod.GET, "/empresa/**").hasAnyRole("ADMON", "EMPRESA")
                 .requestMatchers(HttpMethod.POST, "/empresa/**").hasAnyRole("ADMON")
                 .requestMatchers(HttpMethod.PUT, "/empresa/edit/**").hasAnyRole("ADMON")
+                .requestMatchers(HttpMethod.PUT, "/empresa/propia/edit").hasAnyRole("EMPRESA")
                 .requestMatchers(HttpMethod.DELETE, "/empresa/**").hasAnyRole("ADMON")
                 
                 // SOLO ADMIN ==========================================================================================

@@ -33,6 +33,4 @@ public class VacanteRequestDto {
     @Schema(description = "Nombre de la categoría asociada a la vacante", example = "Desarrollo Web")
     private String nombreCategoria;
 
-    @Schema(description = "Nombre de la empresa que publica la vacante", example = "Tech Solutions")
-    private String nombreEmpresa;
 }

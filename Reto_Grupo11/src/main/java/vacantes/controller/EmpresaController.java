@@ -1,6 +1,7 @@
 package vacantes.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -340,5 +341,73 @@ public class EmpresaController {
 
 	    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 	}
+	
+	@Operation(
+		    summary = "Obtener los datos de la empresa autenticada",
+		    description = "Devuelve el perfil de la empresa asociada al usuario autenticado mediante el token JWT.",
+		    responses = {
+		        @ApiResponse(
+		            responseCode = "200",
+		            description = "Datos de la empresa obtenidos correctamente",
+		            content = @Content(
+		                mediaType = "application/json",
+		                schema = @Schema(implementation = EmpresaResponseDto.class),
+		                examples = @ExampleObject(
+		                    name = "Ejemplo de respuesta",
+		                    value = """
+		                    {
+		                      "idEmpresa": 3,
+		                      "cif": "B12345678",
+		                      "nombreEmpresa": "Tech Solutions",
+		                      "direccionFiscal": "Calle Mayor 123",
+		                      "pais": "España",
+		                      "email": "empresa@techsolutions.com"
+		                    }
+		                    """
+		                )
+		            )
+		        ),
+		        @ApiResponse(
+		            responseCode = "401",
+		            description = "No autorizado. El usuario no está autenticado o su token no es válido."
+		        ),
+		        @ApiResponse(
+		            responseCode = "404",
+		            description = "No se encontró empresa asociada al usuario autenticado."
+		        )
+		    }
+		)
+		@GetMapping("/miperfil")
+		public ResponseEntity<?> obtenerMiEmpresa() {
+		    // 1. Obtener el email del token JWT
+		    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		    String email = auth.getName();
+
+		    // 2. Buscar el usuario
+		    Usuario usuario = usuarioService.buscarPorEmail(email);
+		    if (usuario == null) {
+		        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+		    }
+
+		    // 3. Buscar la empresa asociada
+		    Empresa empresa = empresaService.buscarPorUsuario(usuario);
+		    if (empresa == null) {
+		        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+		                .body(Map.of("message", "No tienes empresa registrada."));
+		    }
+
+		    // 4. Crear respuesta
+		    EmpresaResponseDto response = EmpresaResponseDto.builder()
+		            .idEmpresa(empresa.getIdEmpresa())
+		            .cif(empresa.getCif())
+		            .nombreEmpresa(empresa.getNombreEmpresa())
+		            .direccionFiscal(empresa.getDireccionFiscal())
+		            .pais(empresa.getPais())
+		            .email(usuario.getEmail())
+		            .build();
+
+		    return ResponseEntity.ok(response);
+		}
+
 	
 }
