@@ -8,6 +8,8 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,6 +30,7 @@ import vacantes.modelo.services.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -264,6 +267,138 @@ public class UsuarioController {
 		}
 		// POSTMAN: localhost:8445/usuario/delete/nuevo@correo.com
 	}
+	
+	@Operation(
+		    summary = "Obtener los datos del usuario autenticado",
+		    description = "Devuelve el perfil del usuario autenticado mediante el token JWT.",
+		    responses = {
+		        @ApiResponse(
+		            responseCode = "200",
+		            description = "Datos del usuario obtenidos correctamente",
+		            content = @Content(
+		                mediaType = "application/json",
+		                schema = @Schema(implementation = UsuarioResponseDto.class),
+		                examples = @ExampleObject(
+		                    name = "Ejemplo de respuesta",
+		                    value = """
+		                    {
+		                      "email": "usuario@correo.com",
+		                      "nombre": "Ana",
+		                      "apellidos": "López Ramírez",
+		                      "fechaRegistro": "2024-05-12",
+		                      "rol": "CLIENTE",
+		                      "enabled": 1
+		                    }
+		                    """
+		                )
+		            )
+		        ),
+		        @ApiResponse(
+		            responseCode = "401",
+		            description = "No autorizado. El usuario no está autenticado o su token no es válido."
+		        ),
+		        @ApiResponse(
+		            responseCode = "404",
+		            description = "No se encontró el usuario autenticado."
+		        )
+		    }
+		)
+		@GetMapping("/miperfil")
+		public ResponseEntity<?> obtenerMiPerfil() {
+		    // 1. Obtener el email del token JWT
+		    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		    String email = auth.getName();
+
+		    // 2. Buscar el usuario
+		    Usuario usuario = usuarioService.buscarPorEmail(email);
+		    if (usuario == null) {
+		        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+		    }
+
+		    // 3. Crear respuesta DTO
+		    UsuarioResponseDto response = UsuarioResponseDto.builder()
+		            .email(usuario.getEmail())
+		            .nombre(usuario.getNombre())
+		            .apellidos(usuario.getApellidos())
+		            .fechaRegistro(usuario.getFechaRegistro())
+		            .rol(usuario.getRol().name()) // convertir enum a String
+		            .enabled(usuario.getEnabled())
+		            .build();
+
+		    // 4. Devolver respuesta
+		    return ResponseEntity.ok(response);
+		}
+	
+	@Operation(
+		    summary = "Editar los datos del usuario autenticado",
+		    description = "Este endpoint permite al usuario autenticado modificar su propia información personal. "
+		                + "El usuario se identifica mediante el token JWT. "
+		                + "El campo 'email' en el cuerpo del request debe coincidir con el del token o se ignorará."
+		)
+		@ApiResponses(value = {
+		    @ApiResponse(responseCode = "200", description = "Usuario actualizado correctamente",
+		                 content = @Content(mediaType = "application/json",
+		                 schema = @Schema(implementation = UsuarioResponseDto.class))),
+		    @ApiResponse(responseCode = "401", description = "Usuario no autenticado o token inválido",
+		                 content = @Content),
+		    @ApiResponse(responseCode = "403", description = "Intento de suplantación de identidad",
+		                 content = @Content),
+		    @ApiResponse(responseCode = "404", description = "Usuario no encontrado",
+		                 content = @Content),
+		    @ApiResponse(responseCode = "500", description = "Error interno al actualizar el usuario",
+		                 content = @Content)
+		})
+		@PutMapping("/edit/miperfil")
+		public ResponseEntity<?> editarMiPerfil(
+		    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+		        description = "Datos a actualizar del usuario. El campo 'email' debe coincidir con el autenticado.",
+		        required = true,
+		        content = @Content(schema = @Schema(implementation = UsuarioRequestDto.class))
+		    )
+		    @RequestBody UsuarioRequestDto usuarioRequest
+		) {
+
+		    // 1. Obtener email del usuario autenticado desde el token JWT
+		    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		    String emailToken = auth.getName();
+
+		    // 2. Buscar el usuario autenticado
+		    Usuario usuario = usuarioService.buscarPorEmail(emailToken);
+		    if (usuario == null) {
+		        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+		    }
+
+		    // 3. (Opcional) Validar que el email del request no intente suplantar identidad
+		    if (usuarioRequest.getEmail() != null && !usuarioRequest.getEmail().equalsIgnoreCase(emailToken)) {
+		        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+		    }
+
+		    // 4. Actualizar los campos permitidos
+		    usuario.setNombre(usuarioRequest.getNombre());
+		    usuario.setApellidos(usuarioRequest.getApellidos());
+		    // Si quieres permitir cambiar otras cosas, las pones aquí
+
+		    // 5. Guardar cambios
+		    int result = usuarioService.updateUno(usuario);
+
+		    if (result == 1) {
+		        // 6. Construir respuesta DTO
+		        UsuarioResponseDto responseDto = UsuarioResponseDto.builder()
+		                .email(usuario.getEmail())  // siempre email del token
+		                .nombre(usuario.getNombre())
+		                .apellidos(usuario.getApellidos())
+		                .fechaRegistro(usuario.getFechaRegistro())
+		                .rol(usuario.getRol().name())
+		                .enabled(usuario.getEnabled())
+		                .build();
+
+		        return ResponseEntity.ok(responseDto);
+		    }
+
+		    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}	
+	
+	
 	
 	// NO HACE FALTA YA TENEMOS EL REGISTRO PARA ESTO. TENER EN CUENTA
 	/*
