@@ -348,7 +348,7 @@ public class UsuarioController {
 		    @ApiResponse(responseCode = "500", description = "Error interno al actualizar el usuario",
 		                 content = @Content)
 		})
-		@PutMapping("/edit/miperfil")
+		@PutMapping("/miperfil/edit")
 		public ResponseEntity<?> editarMiPerfil(
 		    @io.swagger.v3.oas.annotations.parameters.RequestBody(
 		        description = "Datos a actualizar del usuario. El campo 'email' debe coincidir con el autenticado.",
