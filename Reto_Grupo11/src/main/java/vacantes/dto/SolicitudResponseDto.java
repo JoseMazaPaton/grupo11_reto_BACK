@@ -36,7 +36,7 @@ public class SolicitudResponseDto {
     @Schema(description = "Nombre de la empresa que ofrece la vacante", example = "Tech Solutions")
     private String nombreEmpresa;
     
-    
+    private int idSolicitud;
     private String emailUsuario;
     private String nombreUsuario;
 }

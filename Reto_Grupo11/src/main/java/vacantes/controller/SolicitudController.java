@@ -342,6 +342,9 @@ public class SolicitudController {
 	            .nombreVacante(solicitud.getVacante().getNombre())
 	            .imagenVacante(solicitud.getVacante().getImagen())
 	            .nombreEmpresa(solicitud.getVacante().getEmpresa().getNombreEmpresa())
+	            .emailUsuario(solicitud.getUsuario().getEmail())
+	            .nombreUsuario(solicitud.getUsuario().getNombre())
+	            .idSolicitud(solicitud.getIdSolicitud())
 	            .build())
 	        .toList();
 

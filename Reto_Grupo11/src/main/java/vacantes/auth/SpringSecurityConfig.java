@@ -102,7 +102,7 @@ public class SpringSecurityConfig {
                 
                 // VACANTES
                 .requestMatchers(HttpMethod.GET, "/vacante/todas").permitAll()
-                .requestMatchers(HttpMethod.GET, "/vacante/detalle/**").hasAnyRole("EMPRESA")
+                .requestMatchers(HttpMethod.GET, "/vacante/detalle/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/vacante/add").hasAnyRole("EMPRESA")
                 .requestMatchers(HttpMethod.PUT, "/vacante/modificar/**").hasAnyRole("EMPRESA")
                 .requestMatchers(HttpMethod.DELETE, "/vacante/eliminar/**").hasAnyRole("EMPRESA")
