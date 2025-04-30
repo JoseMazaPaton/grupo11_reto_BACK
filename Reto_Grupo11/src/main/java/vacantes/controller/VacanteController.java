@@ -113,6 +113,18 @@ public class VacanteController {
 		
 	}
 	
+	@GetMapping("/creadas")
+	public ResponseEntity<List<VacanteResponseDto>> creadasVacantes() {
+		
+		List<Vacante> vacantes = vService.buscarPorEstado(EstadoVacante.CREADA);
+		
+		List<VacanteResponseDto> response = vacantes.stream()
+				.map(this::convertToDto).toList();
+		
+		return ResponseEntity.ok(response);
+		
+	}
+	
 	@Operation(
 	        summary = "Crear una nueva vacante",
 	        description = "Crea una vacante asociada a una categoría y empresa existentes."
@@ -302,6 +314,32 @@ public class VacanteController {
 	    vService.deleteUno(idVacante);
 	    
 	    return ResponseEntity.ok("Vacante eliminada con éxito");
+	}
+	 
+	 @Operation(
+		        summary = "Cancelar una vacante",
+		        description = "Cancelar una vacante según su ID."
+		    )
+		    @ApiResponses({
+		        @ApiResponse(responseCode = "200", description = "Vacante cancelada"),
+		        @ApiResponse(responseCode = "404", description = "Vacante no encontrada")
+		    })
+	@Transactional
+	@PutMapping("/cancelar/{idVacante}")
+	public ResponseEntity<?> cancelarVacante(
+			@Parameter(description = "ID de la vacante a cancelar", example = "6")
+			@PathVariable int idVacante) {
+	    // Verificamos que exista antes de eliminar
+	    Vacante vacante = vService.buscarUno(idVacante);
+	    
+	    if (vacante == null) {
+	    	return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No hay coincidencia con la vacante que se quiere eliminar");
+	    }
+	    
+	    vacante.setEstatus(EstadoVacante.CANCELADA);
+	    vService.insertUno(vacante);
+
+	    return ResponseEntity.ok(Map.of("message", "✅ Vacante cancelada con éxito"));
 	}
 	
 	 
