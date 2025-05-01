@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import vacantes.dto.SolicitudRequestDto;
 import vacantes.modelo.entities.Solicitud;
 import vacantes.modelo.entities.Usuario;
 import vacantes.modelo.entities.Vacante;
@@ -119,5 +120,40 @@ public class UsuarioServiceImpl implements UsuarioService {
 	    }
 	}
 
+	@Override
+	public int enviarSolicitudDto(SolicitudRequestDto dto, int idVacante, String email) {
+		
+		try {
+			Usuario usuario = uRepo.findById(email).orElse(null);
+			Vacante vacante = vRepo.findById(idVacante).orElse(null);
+	
+	        if (usuario == null || vacante == null) {
+	            return 0; // Si no existen, devuelvo 0
+	        }
+	        
+	        if (sRepo.findByVacanteAndUsuario(vacante, usuario) != null) { // Comprobamos si ya existe solicitud de ese usuario a esa vacante
+	            return 2; // Si ya existe devuelvo 2
+	        }
+	        
+	        // Completamos la solicitud
+		    Solicitud solicitud = Solicitud.builder()
+			        .usuario(usuario)
+			        .vacante(vacante)
+			        .archivo(dto.getArchivo())
+			        .comentarios(dto.getComentarios())
+			        .curriculum(dto.getCurriculum())
+			        .estado(0) // pendiente
+			        .fecha(new Date(System.currentTimeMillis()))
+			        .build();
 
+			    sRepo.save(solicitud);
+			    return 1;
+	        
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return -1;
+	    }
+	}
 }
+
+

@@ -3,6 +3,7 @@ package vacantes.controller;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import vacantes.dto.SolicitudRequestDto;
 import vacantes.dto.UsuarioRequestDto;
 import vacantes.dto.UsuarioResponseDto;
 import vacantes.modelo.entities.Solicitud;
@@ -94,6 +96,25 @@ public class UsuarioController {
 		// POSTMAN: localhost:8445/usuario/solicitud/vacante
     }
 	
+	@Transactional
+	@PostMapping("/solicitud/vacante/{idVacante}")
+	public ResponseEntity<?> postularVacante(
+	        @PathVariable int idVacante,
+	        @RequestBody SolicitudRequestDto dto,
+	        Authentication authentication) {
+	    
+	    Usuario usuarioAutenticado = (Usuario) authentication.getPrincipal();
+	    
+	    Integer respuesta = usuarioService.enviarSolicitudDto(dto, idVacante, usuarioAutenticado.getEmail());
+
+	    return switch (respuesta) {
+        case 1 -> ResponseEntity.ok(Map.of("message", "Solicitud enviada correctamente"));
+        case 0 -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Usuario o vacante no encontrados."));
+        case 2 -> ResponseEntity.badRequest().body(Map.of("error", "Ya has postulado a esta vacante."));
+        case -1 -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Problema con la base de datos"));
+        default -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Error desconocido"));
+    };
+	}
 	
 	/***** CRUD *****/
     

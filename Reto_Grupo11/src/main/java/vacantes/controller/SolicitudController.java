@@ -177,10 +177,15 @@ public class SolicitudController {
 			@PathVariable int idSolicitud) {
 	    
 		switch(solicitudService.deleteUno(idSolicitud)) {
-			case 1:  return new ResponseEntity<>("Solicitud eliminada correctamente", HttpStatus.OK);
+			/*case 1:  return new ResponseEntity<>("Solicitud eliminada correctamente", HttpStatus.OK);
 			case 0:  return new ResponseEntity<>("Solicitud NO eliminada. No se encontró la solicitud", HttpStatus.NOT_FOUND);
-			default:  return new ResponseEntity<>("Error desconocido", HttpStatus.INTERNAL_SERVER_ERROR);
-		}
+			default:  return new ResponseEntity<>("Error desconocido", HttpStatus.INTERNAL_SERVER_ERROR);*/
+			
+			case 1: return ResponseEntity.ok(Map.of("message", "Solicitud eliminada correctamente"));
+			case 0: return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Solicitud NO eliminada. No se encontró la solicitud"));
+			default: return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Error desconocido"));
+		
+       }
 	
 	}
 	    

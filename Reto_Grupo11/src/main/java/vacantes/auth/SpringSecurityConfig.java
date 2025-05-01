@@ -124,7 +124,8 @@ public class SpringSecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/usuario/edit/**").hasAnyRole("ADMON")
                 .requestMatchers(HttpMethod.PUT, "/usuario/miperfil/edit").hasAnyRole("CLIENTE")
                 .requestMatchers(HttpMethod.DELETE, "/usuario/**").hasAnyRole("ADMON")
-
+                .requestMatchers(HttpMethod.POST, "/usuario/solicitud/vacante").hasAnyRole("CLIENTE")
+              
                 // EMPRESA
                 
                 .requestMatchers(HttpMethod.GET, "/empresa/**").hasAnyRole("ADMON", "EMPRESA")

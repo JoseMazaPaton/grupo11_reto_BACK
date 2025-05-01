@@ -36,7 +36,15 @@ public class SolicitudResponseDto {
     @Schema(description = "Nombre de la empresa que ofrece la vacante", example = "Tech Solutions")
     private String nombreEmpresa;
     
+    @Schema(description = "Comentarios del usuario sobre la postulación", example = "Interesado en el puesto, experiencia internacional")   
+    private String comentarios; 
+    
+    @Schema(description = "ID único de la solicitud", example = "101")
     private int idSolicitud;
+    
+    @Schema(description = "Correo electrónico del usuario que realizó la solicitud", example = "usuario@example.com")
     private String emailUsuario;
+    
+    @Schema(description = "Nombre completo del usuario que realizó la solicitud", example = "Juan Pérez")
     private String nombreUsuario;
 }
